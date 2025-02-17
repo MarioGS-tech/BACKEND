@@ -17,55 +17,50 @@
 	<parameter name="CSV" class="java.lang.Boolean"/>
 	<queryString>
 		<![CDATA[SELECT
-T.ID_TRANSACCION,
-	TO_CHAR(TO_DATE(DT.FECHA_EMISION, 'YYYY-MM-DD'), 'MM') AS MES,
-		NVL(C.NIT_CUSTOMER,C.NUMERO_DOCUMENTO) DOCUMENTO_IDENTIFICACION,
-	DT.SELLO_RECIBIDO_MH,
-	C.NUMERO_DOCUMENTO NUMERO_IDENTIFICACION,
-	SUBSTR(C.NOMBRE_CLIENTE, 1, 100) NOMBRE,
-	TO_CHAR(TO_DATE(DT.FECHA_EMISION, 'YYYY-MM-DD'), 'DDMMYYYY') AS FECHA_EMISION,
-	4 CLASE_DOCUMENTO,
-	CASE
-		WHEN T.TIPO_DTE = '07' THEN 7
-	END AS TIPO_DOCUMENTO,
-	T.CODIGO_GENERACION MUNERO_DOCUMENTO,
-	T.TOTAL_GRAVADO,
-	T.TOTAL_IVA,
-	TO_CHAR(T.FECHA_TRANSACCION, 'YYYY') ANIO,
-	3 ANEXO
-FROM
-	CNRPOS_TRANSACCION T
-	LEFT JOIN (
-    SELECT
-        d.ID_TRANSACCION,
-        d.FECHA_EMISION,
-        d.SELLO_RECIBIDO_MH,
-        d.CODIGO_GENERACION
-    FROM
-        CNRPOS_DTE_TRANSACCION d
-    INNER JOIN (
-        SELECT
-            ID_TRANSACCION,
-            MAX(ID_DTE_TRANSACCION) AS ULT_ID_DTE_TRANSACCION
+            t.id_transaccion,
+            MONTH(STR_TO_DATE(dt.fecha_emision, '%Y-%m-%d')) AS MES,
+            COALESCE(c.nit_customer, c.numero_documento) AS DOCUMENTO_IDENTIFICACION,
+            dt.sello_recibido_mh,
+            c.numero_documento AS NUMERO_IDENTIFICACION,
+            LEFT(c.nombre_cliente, 100) AS NOMBRE,
+            DATE_FORMAT(STR_TO_DATE(dt.fecha_emision, '%Y-%m-%d'), '%d%m%Y') AS FECHA_EMISION,
+            4 AS CLASE_DOCUMENTO,
+            CASE WHEN t.tipo_dte = '07' THEN 7 END AS TIPO_DOCUMENTO,
+            t.codigo_generacion AS MUNERO_DOCUMENTO,
+            t.total_gravado,
+            t.total_iva,
+            YEAR(t.fecha_transaccion) AS ANIO,
+            3 AS ANEXO
         FROM
-            CNRPOS_DTE_TRANSACCION
-        GROUP BY
-            ID_TRANSACCION
-    ) MAX_T ON
-        d.ID_TRANSACCION = MAX_T.ID_TRANSACCION
-        AND d.ID_DTE_TRANSACCION = MAX_T.ULT_ID_DTE_TRANSACCION
-) dt ON
-    t.ID_TRANSACCION = dt.ID_TRANSACCION
-LEFT JOIN CNRPOS_CLIENTE c ON
-	t.ID_CLIENTE = c.ID_CLIENTE
-WHERE
-	T.STATUS IN (2,6) 
-	AND T.TIPO_DTE IN ('07')
-	AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD')  
-AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')
-and LENGTH(C.NIT_CUSTOMER) = 14
-ORDER BY
-	T.FECHA_TRANSACCION]]>
+            cnrpos_transaccion t
+            LEFT JOIN (
+                SELECT
+                    d.id_transaccion,
+                    d.fecha_emision,
+                    d.sello_recibido_mh,
+                    d.codigo_generacion
+                FROM
+                    cnrpos_dte_transaccion d
+                INNER JOIN (
+                    SELECT
+                        id_transaccion,
+                        MAX(id_dte_transaccion) AS ult_id_dte_transaccion
+                    FROM
+                        cnrpos_dte_transaccion
+                    GROUP BY
+                        id_transaccion
+                ) max_t ON d.id_transaccion = max_t.id_transaccion
+                    AND d.id_dte_transaccion = max_t.ult_id_dte_transaccion
+            ) dt ON t.id_transaccion = dt.id_transaccion
+            LEFT JOIN cnrpos_cliente c ON t.id_cliente = c.id_cliente
+        WHERE
+            t.status IN (2,6)
+            AND t.tipo_dte IN ('07')
+            AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+            AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+            AND LENGTH(c.nit_customer) = 14
+        ORDER BY
+            t.fecha_transaccion]]>
 	</queryString>
 	<field name="ID_TRANSACCION" class="java.math.BigDecimal">
 		<property name="com.jaspersoft.studio.field.name" value="ID_TRANSACCION"/>

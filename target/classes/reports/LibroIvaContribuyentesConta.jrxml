@@ -20,62 +20,69 @@
 		<parameter name="FECHA_DESDE" class="java.lang.String"/>
 		<parameter name="FECHA_HASTA" class="java.lang.String"/>
 		<queryString language="SQL">
-			<![CDATA[SELECT
-    'CONSUMIDOR FINAL' OPERACION,
-    SUM(((CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END)) - (CASE WHEN TOTAL_GRAVADO > 0 THEN (TOTAL_TRANSACCION/1.13)*0.13 ELSE 0 END)) GRAVADA,
-    SUM(TOTAL_IVA) DEBITO_FISCAL,
-    SUM(IVA_PERCIVIDO) IVA_PERCIVIDO,
-    SUM(IVA_RETENIDO) IVA_RETENIDO
-FROM
-    CNRPOS_TRANSACCION
-WHERE
-    STATUS IN (2,6)
-    AND TIPO_DTE = '01'
-    AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE($P{FECHA_DESDE}, 'YYYY-MM-DD') 
-    AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')
-UNION ALL
-SELECT
-    'CONTRIBUYENTES' OPERACION,
-    SUM(
-        CASE
-            WHEN TIPO_DTE = '05' THEN -(TOTAL_TRANSACCION)
-            ELSE (TOTAL_TRANSACCION)
-        END
-    ) AS GRAVADA,
-    SUM(
-        CASE
-            WHEN TIPO_DTE = '05' THEN -TOTAL_IVA
-            ELSE TOTAL_IVA
-        END
-    ) AS DEBITO_FISCAL,
-    SUM(
-        CASE
-            WHEN TIPO_DTE = '05' THEN -IVA_PERCIVIDO
-            ELSE IVA_PERCIVIDO
-        END
-    ) AS IVA_PERCIVIDO,
-    SUM(
-        CASE
-            WHEN TIPO_DTE = '05' THEN -IVA_RETENIDO
-            ELSE IVA_RETENIDO
-        END
-    ) AS IVA_RETENIDO
-FROM
-    CNRPOS_TRANSACCION
-WHERE
-    STATUS IN (2,6)
-    AND TIPO_DTE IN ('03', '05', '06')
-    AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE($P{FECHA_DESDE}, 'YYYY-MM-DD') 
-    AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')
-UNION ALL
-SELECT
-    'VENTAS A CTA DE TERCEROS' OPERACION,
-    0.00 AS GRAVADA,
-    0.00 AS DEBITO_FISCAL,
-    0.00 AS IVA_PERCIVIDO,
-    0.00 AS IVA_RETENIDO
-FROM
-    DUAL]]>
+			<![CDATA[
+    SELECT
+        'CONSUMIDOR FINAL' AS OPERACION,
+        SUM(((CASE WHEN total_gravado > 0 THEN total_transaccion ELSE 0 END)) -
+            (CASE WHEN total_gravado > 0 THEN (total_transaccion/1.13)*0.13 ELSE 0 END)) AS GRAVADA,
+        SUM(total_iva) AS DEBITO_FISCAL,
+        SUM(iva_percivido) AS IVA_PERCIVIDO,
+        SUM(iva_retenido) AS IVA_RETENIDO
+    FROM
+        cnrpos_transaccion
+    WHERE
+        status IN (2,6)
+        AND tipo_dte = '01'
+        AND DATE(fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+        AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+
+    UNION ALL
+
+    SELECT
+        'CONTRIBUYENTES' AS OPERACION,
+        SUM(
+            CASE
+                WHEN tipo_dte = '05' THEN -(total_transaccion)
+                ELSE (total_transaccion)
+            END
+        ) AS GRAVADA,
+        SUM(
+            CASE
+                WHEN tipo_dte = '05' THEN -total_iva
+                ELSE total_iva
+            END
+        ) AS DEBITO_FISCAL,
+        SUM(
+            CASE
+                WHEN tipo_dte = '05' THEN -iva_percivido
+                ELSE iva_percivido
+            END
+        ) AS IVA_PERCIVIDO,
+        SUM(
+            CASE
+                WHEN tipo_dte = '05' THEN -iva_retenido
+                ELSE iva_retenido
+            END
+        ) AS IVA_RETENIDO
+    FROM
+        cnrpos_transaccion
+    WHERE
+        status IN (2,6)
+        AND tipo_dte IN ('03', '05', '06')
+        AND DATE(fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+        AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+
+    UNION ALL
+
+    SELECT
+        'VENTAS A CTA DE TERCEROS' AS OPERACION,
+        0.00 AS GRAVADA,
+        0.00 AS DEBITO_FISCAL,
+        0.00 AS IVA_PERCIVIDO,
+        0.00 AS IVA_RETENIDO
+    FROM
+        (SELECT 1) AS dummy
+    ]]>
 		</queryString>
 		<field name="OPERACION" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="OPERACION"/>
@@ -110,58 +117,60 @@ FROM
 		<parameter name="FECHA_HASTA" class="java.lang.String"/>
 		<parameter name="T.GRAVADO" class="java.math.BigDecimal"/>
 		<queryString language="SQL">
-			<![CDATA[SELECT
-    'TOTALES' AS OPERACION,
-    SUM(
-        CASE
-            WHEN STATUS IN (2,6) AND TIPO_DTE = '01' THEN
-                ((CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END) - TOTAL_IVA)
-            WHEN STATUS IN (2,6) AND TIPO_DTE IN ('03', '05', '06') THEN
-                CASE
-                    WHEN TIPO_DTE = '05' THEN -(TOTAL_GRAVADO - DESCUENTO_GRAVADO)
-                    ELSE (TOTAL_GRAVADO - DESCUENTO_GRAVADO)
-                END
-            ELSE 0
-        END
-    ) AS GRAVADA,
-    SUM(
-        CASE
-            WHEN STATUS IN (2,6) AND TIPO_DTE = '01' THEN TOTAL_IVA
-            WHEN STATUS IN (2,6) AND TIPO_DTE IN ('03', '05', '06') THEN
-                CASE
-                    WHEN TIPO_DTE = '05' THEN -TOTAL_IVA
-                    ELSE TOTAL_IVA
-                END
-            ELSE 0
-        END
-    ) AS DEBITO_FISCAL,
-    SUM(
-        CASE
-            WHEN STATUS IN (2,6) AND TIPO_DTE IN ('03', '05', '06') THEN
-                CASE
-                    WHEN TIPO_DTE = '05' THEN -IVA_PERCIVIDO
-                    ELSE IVA_PERCIVIDO
-                END
-            ELSE 0
-        END
-    ) AS IVA_PERCIVIDO,
-    SUM(
-        CASE
-            WHEN STATUS IN (2,6) AND TIPO_DTE IN ('03', '05', '06') THEN
-                CASE
-                    WHEN TIPO_DTE = '05' THEN -IVA_RETENIDO
-                    ELSE IVA_RETENIDO
-                END
-            ELSE 0
-        END
-    ) AS IVA_RETENIDO
-FROM
-    CNRPOS_TRANSACCION
-WHERE
-    STATUS IN (2,6)
-    AND TIPO_DTE IN ('01', '03', '05', '06')
-    AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE($P{FECHA_DESDE}, 'YYYY-MM-DD')
-    AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')]]>
+			<![CDATA[
+    SELECT
+        'TOTALES' AS OPERACION,
+        SUM(
+            CASE
+                WHEN status IN (2,6) AND tipo_dte = '01' THEN
+                    ((CASE WHEN total_gravado > 0 THEN total_transaccion ELSE 0 END) - total_iva)
+                WHEN status IN (2,6) AND tipo_dte IN ('03', '05', '06') THEN
+                    CASE
+                        WHEN tipo_dte = '05' THEN -(total_gravado - descuento_gravado)
+                        ELSE (total_gravado - descuento_gravado)
+                    END
+                ELSE 0
+            END
+        ) AS GRAVADA,
+        SUM(
+            CASE
+                WHEN status IN (2,6) AND tipo_dte = '01' THEN total_iva
+                WHEN status IN (2,6) AND tipo_dte IN ('03', '05', '06') THEN
+                    CASE
+                        WHEN tipo_dte = '05' THEN -total_iva
+                        ELSE total_iva
+                    END
+                ELSE 0
+            END
+        ) AS DEBITO_FISCAL,
+        SUM(
+            CASE
+                WHEN status IN (2,6) AND tipo_dte IN ('03', '05', '06') THEN
+                    CASE
+                        WHEN tipo_dte = '05' THEN -iva_percivido
+                        ELSE iva_percivido
+                    END
+                ELSE 0
+            END
+        ) AS IVA_PERCIVIDO,
+        SUM(
+            CASE
+                WHEN status IN (2,6) AND tipo_dte IN ('03', '05', '06') THEN
+                    CASE
+                        WHEN tipo_dte = '05' THEN -iva_retenido
+                        ELSE iva_retenido
+                    END
+                ELSE 0
+            END
+        ) AS IVA_RETENIDO
+    FROM
+        cnrpos_transaccion
+    WHERE
+        status IN (2,6)
+        AND tipo_dte IN ('01', '03', '05', '06')
+        AND DATE(fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+        AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+    ]]>
 		</queryString>
 		<field name="OPERACION" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="OPERACION"/>
@@ -188,55 +197,57 @@ WHERE
 	<parameter name="FECHA_DESDE" class="java.lang.String"/>
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<queryString language="SQL">
-		<![CDATA[SELECT
-    T.FECHA_TRANSACCION,
-    c.NRC_CUSTOMER NRC,
-    t.CODIGO_GENERACION,
-    c.NOMBRE_CLIENTE,
+		<![CDATA[
+    SELECT
+        t.fecha_transaccion,
+        c.nrc_customer AS NRC,
+        t.codigo_generacion,
+        c.nombre_cliente,
         CASE
-        WHEN T.STATUS = 7 THEN 0
-        WHEN t.TIPO_DTE = '05' THEN -  t.TOTAL_TRANSACCION
-        ELSE  t.TOTAL_TRANSACCION
-    END AS TOTAL_GRAVADO,
-    CASE
-        WHEN T.STATUS = 7 THEN 0
-        WHEN t.TIPO_DTE = '05' THEN -t.TOTAL_IVA
-        ELSE t.TOTAL_IVA
-    END AS DEBITO_FISCAL,
-    CASE
-        WHEN T.STATUS = 7 THEN 0
-        ELSE 0.00
-    END AS VENTAS_TERCERO,
-    CASE
-        WHEN T.STATUS = 7 THEN 0
-        ELSE 0.00
-    END AS DEBITO_TERCERO,
-    CASE
-        WHEN T.STATUS = 7 THEN 0
-        WHEN t.TIPO_DTE = '05' THEN -T.IVA_PERCIVIDO
-        ELSE T.IVA_PERCIVIDO
-    END AS IVA_PERCIVIDO,
-    CASE
-        WHEN T.STATUS = 7 THEN 0
-        WHEN t.TIPO_DTE = '05' THEN -T.IVA_RETENIDO
-        ELSE T.IVA_RETENIDO
-    END AS IVA_RETENIDO,
-    CASE
-        WHEN T.STATUS = 7 THEN 0
-        WHEN t.TIPO_DTE = '05' THEN -(T.TOTAL_TRANSACCION + T.TOTAL_IVA - T.IVA_RETENIDO)
-        ELSE (T.TOTAL_TRANSACCION + T.TOTAL_IVA - T.IVA_RETENIDO)
-    END AS TOTAL_VENTA,
-    1 AS ANEXO
-FROM
-    CNRPOS_TRANSACCION t
-LEFT JOIN CNRPOS_CLIENTE c ON
-    t.ID_CLIENTE = c.ID_CLIENTE
-WHERE
-    T.STATUS IN (2,6,7)
-    AND t.TIPO_DTE IN ('03', '05', '06')
-    AND TRUNC(T.FECHA_TRANSACCION) BETWEEN TO_DATE($P{FECHA_DESDE}, 'YYYY-MM-DD') 
-    AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')
-ORDER BY FECHA_TRANSACCION]]>
+            WHEN t.status = 7 THEN 0
+            WHEN t.tipo_dte = '05' THEN -t.total_transaccion
+            ELSE t.total_transaccion
+        END AS TOTAL_GRAVADO,
+        CASE
+            WHEN t.status = 7 THEN 0
+            WHEN t.tipo_dte = '05' THEN -t.total_iva
+            ELSE t.total_iva
+        END AS DEBITO_FISCAL,
+        CASE
+            WHEN t.status = 7 THEN 0
+            ELSE 0.00
+        END AS VENTAS_TERCERO,
+        CASE
+            WHEN t.status = 7 THEN 0
+            ELSE 0.00
+        END AS DEBITO_TERCERO,
+        CASE
+            WHEN t.status = 7 THEN 0
+            WHEN t.tipo_dte = '05' THEN -t.iva_percivido
+            ELSE t.iva_percivido
+        END AS IVA_PERCIVIDO,
+        CASE
+            WHEN t.status = 7 THEN 0
+            WHEN t.tipo_dte = '05' THEN -t.iva_retenido
+            ELSE t.iva_retenido
+        END AS IVA_RETENIDO,
+        CASE
+            WHEN t.status = 7 THEN 0
+            WHEN t.tipo_dte = '05' THEN -(t.total_transaccion + t.total_iva - t.iva_retenido)
+            ELSE (t.total_transaccion + t.total_iva - t.iva_retenido)
+        END AS TOTAL_VENTA,
+        1 AS ANEXO
+    FROM
+        cnrpos_transaccion t
+    LEFT JOIN cnrpos_cliente c ON
+        t.id_cliente = c.id_cliente
+    WHERE
+        t.status IN (2,6,7)
+        AND t.tipo_dte IN ('03', '05', '06')
+        AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+        AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+    ORDER BY t.fecha_transaccion
+    ]]>
 	</queryString>
 	<field name="FECHA_TRANSACCION" class="java.sql.Timestamp">
 		<property name="com.jaspersoft.studio.field.name" value="FECHA_TRANSACCION"/>

@@ -9,139 +9,70 @@
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[SELECT
-    CASE
-        WHEN T.TIPO_DTE = '01' THEN 'FACTURA'
-        WHEN T.TIPO_DTE = '03' THEN 'CCFE'
-        WHEN T.TIPO_DTE = '05' THEN 'NCE'
-        WHEN T.TIPO_DTE = '06' THEN 'CDE'
-        WHEN T.TIPO_DTE = '07' THEN 'CRE'
-        WHEN T.TIPO_DTE = '14' THEN 'FSE'
-    END TIPO_DOCUMENTO,
-    T.CODIGO_GENERACION,
-    DT.SELLO_RECIBIDO_MH,
-    T.NUMERO_DTE,
-    S.NOMBRE_SUCURSAL,
-    I.CODIGO_PRODUCTO,
-    I.CODIGO_INGRESO,
-    I.NOMBRE_ITEM,
-    I.CANTIDAD,
-    CASE 
-        WHEN T.TIPO_DTE = '01' THEN 
-            (I.TOTAL - (I.IVA_ITEM - (I.IVA_ITEM)*T.PORCENTAJE_DESCUENTO/100)) - 
-            ((I.TOTAL - (I.IVA_ITEM - (I.IVA_ITEM)*T.PORCENTAJE_DESCUENTO/100)) * T.PORCENTAJE_DESCUENTO/100)
-        WHEN T.TIPO_DTE = '05' THEN 
-            -((I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))
-        ELSE 
-            (I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100)
-    END S_IVA,
-    CASE 
-        WHEN T.TIPO_DTE = '05' THEN -(CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 ELSE 0 END)
-          WHEN T.TIPO_DTE = '01' THEN (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.IVA_ITEM - (I.IVA_ITEM)*T.PORCENTAJE_DESCUENTO/100) ELSE 0 END)
-        ELSE (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 ELSE 0 END)
-    END IVA_ITEM,
-    CASE 
-        WHEN T.TIPO_DTE = '01' THEN 
-            I.TOTAL - (I.TOTAL * T.PORCENTAJE_DESCUENTO/100)
-        WHEN T.TIPO_DTE = '05' THEN 
-            -(I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100) + (I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100) + (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 END)
-        ELSE 
-            (I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100) + (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 END)
-    END TOTAL_ITEM,
-    CASE
-        WHEN T.STATUS = 2 THEN 'Aprobado'
-        WHEN T.STATUS = 7 THEN 'Anulado'
-        WHEN T.STATUS = 6 THEN 'Aprobado Contingencia'
-        WHEN T.STATUS = 5 THEN 'Marcado Contingencia'
-    END ESTADO,
-    S.MISIONAL,
-    S.MODULO,
-    LISTAGG(TRIM(CP.NUMERO_COMPROBANTE), ', ') WITHIN GROUP (ORDER BY CP.NUMERO_COMPROBANTE) AS COMPROBANTES_PAGO,
-    RC.VALOR FORMA_PAGO,
-    T.IVA_RETENIDO * -1 RETE_1,
-    C.NOMBRE_CLIENTE,
-    T.FECHA_TRANSACCION
-FROM
-    CNRPOS_TRANSACCION T
-    LEFT JOIN CNRPOS_CLIENTE C ON T.ID_CLIENTE = C.ID_CLIENTE
-    LEFT JOIN (
-        SELECT
-            D.ID_TRANSACCION,
-            D.FECHA_EMISION,
-            D.SELLO_RECIBIDO_MH,
-            D.CODIGO_GENERACION
+            CASE
+                WHEN t.tipo_dte = '01' THEN 'FACTURA'
+                WHEN t.tipo_dte = '03' THEN 'CCFE'
+                WHEN t.tipo_dte = '05' THEN 'NCE'
+                WHEN t.tipo_dte = '06' THEN 'CDE'
+                WHEN t.tipo_dte = '07' THEN 'CRE'
+                WHEN t.tipo_dte = '14' THEN 'FSE'
+            END AS TIPO_DOCUMENTO,
+            t.codigo_generacion,
+            dt.sello_recibido_mh,
+            t.numero_dte,
+            s.nombre_sucursal,
+            i.codigo_producto,
+            i.codigo_ingreso,
+            i.nombre_item,
+            i.cantidad,
+            (i.total - (i.total * t.porcentaje_descuento / 100)) AS S_IVA,
+            CASE
+                WHEN i.vta_exenta = 0 THEN (i.total - (i.total * t.porcentaje_descuento / 100)) * 0.13
+                ELSE 0
+            END AS IVA_ITEM,
+            (i.total - (i.total * t.porcentaje_descuento / 100) + (CASE WHEN i.vta_exenta = 0 THEN (i.total - (i.total * t.porcentaje_descuento / 100)) * 0.13 ELSE 0 END)) AS TOTAL_ITEM,
+            CASE
+                WHEN t.status = 2 THEN 'APROBADO'
+                WHEN t.status = 7 THEN 'ANULADO'
+                WHEN t.status = 6 THEN 'APROBADO CONTINGENCIA'
+                WHEN t.status = 5 THEN 'MARCADO CONTINGENCIA'
+            END AS ESTADO,
+            s.misional,
+            s.modulo,
+            GROUP_CONCAT(DISTINCT cp.numero_comprobante ORDER BY cp.numero_comprobante SEPARATOR ', ') AS COMPROBANTES_PAGO,
+            rc.valor AS FORMA_PAGO,
+            t.iva_retenido * -1 AS RETE_1,
+            c.nombre_cliente,
+            t.fecha_transaccion
         FROM
-            CNRPOS_DTE_TRANSACCION D
-        INNER JOIN (
-            SELECT
-                ID_TRANSACCION,
-                MAX(ID_DTE_TRANSACCION) AS ULT_ID_DTE_TRANSACCION
-            FROM
-                CNRPOS_DTE_TRANSACCION
-            GROUP BY
-                ID_TRANSACCION
-        ) MAX_T ON D.ID_TRANSACCION = MAX_T.ID_TRANSACCION
-        AND D.ID_DTE_TRANSACCION = MAX_T.ULT_ID_DTE_TRANSACCION
-    ) DT ON T.ID_TRANSACCION = DT.ID_TRANSACCION
-    INNER JOIN CNRPOS_SUCURSAL S ON T.ID_SUCURSAL = S.ID_SUCURSAL
-    INNER JOIN CNRPOS_ITEM I ON T.ID_TRANSACCION = I.ID_TRANSACCION
-    LEFT JOIN CNRPOS_COMPROBANTE_PAGO_TRANSACCION CP ON T.ID_TRANSACCION = CP.ID_TRANSACCION
-    LEFT JOIN CNRPOS_RCATALOGOS RC ON T.FORMA_DE_PAGO = RC.ID_MH AND RC.GRUPO = 'FORMA_DE_PAGO'
-WHERE 
-    T.STATUS IN (2, 5, 6, 7)
-    AND TRUNC(T.FECHA_TRANSACCION) BETWEEN TO_DATE($P{FECHA_DESDE}, 'YYYY-MM-DD') 
-    AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')
-GROUP BY
-    CASE
-        WHEN T.TIPO_DTE = '01' THEN 'FACTURA'
-        WHEN T.TIPO_DTE = '03' THEN 'CCFE'
-        WHEN T.TIPO_DTE = '05' THEN 'NCE'
-        WHEN T.TIPO_DTE = '06' THEN 'CDE'
-        WHEN T.TIPO_DTE = '07' THEN 'CRE'
-        WHEN T.TIPO_DTE = '14' THEN 'FSE'
-    END,
-    T.CODIGO_GENERACION,
-    DT.SELLO_RECIBIDO_MH,
-    T.NUMERO_DTE,
-    S.NOMBRE_SUCURSAL,
-    I.CODIGO_PRODUCTO,
-    I.CODIGO_INGRESO,
-    I.NOMBRE_ITEM,
-    I.CANTIDAD,
-    CASE 
-        WHEN T.TIPO_DTE = '01' THEN 
-            (I.TOTAL - (I.IVA_ITEM - (I.IVA_ITEM)*T.PORCENTAJE_DESCUENTO/100)) - 
-            ((I.TOTAL - (I.IVA_ITEM - (I.IVA_ITEM)*T.PORCENTAJE_DESCUENTO/100)) * T.PORCENTAJE_DESCUENTO/100)
-        WHEN T.TIPO_DTE = '05' THEN 
-            -((I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))
-        ELSE 
-            (I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100)
-    END,
-    CASE 
-        WHEN T.TIPO_DTE = '05' THEN -(CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 ELSE 0 END)
-          WHEN T.TIPO_DTE = '01' THEN (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.IVA_ITEM - (I.IVA_ITEM)*T.PORCENTAJE_DESCUENTO/100) ELSE 0 END)
-        ELSE (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 ELSE 0 END)
-    END,
-    CASE 
-        WHEN T.TIPO_DTE = '01' THEN 
-            I.TOTAL - (I.TOTAL * T.PORCENTAJE_DESCUENTO/100)
-        WHEN T.TIPO_DTE = '05' THEN 
-            -(I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100) + (I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100) + (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 END)
-        ELSE 
-            (I.TOTAL) - ((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100) + (CASE WHEN I.VTA_EXENTA = 0 THEN  (I.TOTAL -((I.TOTAL)*T.PORCENTAJE_DESCUENTO/100))*0.13 END)
-    END,
-    CASE
-        WHEN T.STATUS = 2 THEN 'Aprobado'
-        WHEN T.STATUS = 7 THEN 'Anulado'
-        WHEN T.STATUS = 6 THEN 'Aprobado Contingencia'
-        WHEN T.STATUS = 5 THEN 'Marcado Contingencia'
-    END,
-    S.MISIONAL,
-    S.MODULO,
-    RC.VALOR,
-    T.IVA_RETENIDO * -1,
-    C.NOMBRE_CLIENTE,
-    T.FECHA_TRANSACCION
-ORDER BY T.FECHA_TRANSACCION]]>
+            cnrpos_transaccion t
+            LEFT JOIN cnrpos_cliente c ON t.id_cliente = c.id_cliente
+            LEFT JOIN (
+                SELECT
+                    d.id_transaccion,
+                    d.fecha_emision,
+                    d.sello_recibido_mh,
+                    d.codigo_generacion
+                FROM cnrpos_dte_transaccion d
+                INNER JOIN (
+                    SELECT id_transaccion, MAX(id_dte_transaccion) AS ult_id_dte_transaccion
+                    FROM cnrpos_dte_transaccion
+                    GROUP BY id_transaccion
+                ) max_t ON d.id_transaccion = max_t.id_transaccion AND d.id_dte_transaccion = max_t.ult_id_dte_transaccion
+            ) dt ON t.id_transaccion = dt.id_transaccion
+            INNER JOIN cnrpos_sucursal s ON t.id_sucursal = s.id_sucursal
+            INNER JOIN cnrpos_item i ON t.id_transaccion = i.id_transaccion
+            LEFT JOIN cnrpos_comprobante_pago_transaccion cp ON t.id_transaccion = cp.id_transaccion
+            LEFT JOIN cnrpos_rcatalogos rc ON t.forma_de_pago = rc.id_mh AND rc.grupo = 'FORMA_DE_PAGO'
+        WHERE
+            t.status IN (2, 5, 6, 7)
+            AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+            AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+        GROUP BY t.tipo_dte, t.codigo_generacion, dt.sello_recibido_mh, t.numero_dte, s.nombre_sucursal,
+                 i.codigo_producto, i.codigo_ingreso, i.nombre_item, i.cantidad, i.total, t.porcentaje_descuento,
+                 i.vta_exenta, t.status, s.misional, s.modulo, rc.valor, t.iva_retenido, c.nombre_cliente,
+                 t.fecha_transaccion
+        ORDER BY t.fecha_transaccion]]>
 	</queryString>
 	<field name="TIPO_DOCUMENTO" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="TIPO_DOCUMENTO"/>

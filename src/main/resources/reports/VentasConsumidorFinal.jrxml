@@ -16,49 +16,49 @@
 	<parameter name="FECHA_DESDE" class="java.lang.String"/>
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<queryString language="SQL">
-		<![CDATA[SELECT
-    TO_CHAR(T.FECHA_TRANSACCION, 'DD/MM/YYYY') FECHA,
-    4 CLASE_DOCUMENTO,
-    T.TIPO_DTE TIPO_DOCUMENTO,
-    'N/A' NUMERO_RESOLUCION,
-    'N/A' SERIE_DOCUMENTO,
-    'N/A' NUMERO_INTERNO_DEL,
-    'N/A' NUMERO_INTERNO_AL,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK FIRST ORDER BY HORA_TRANSACCION) AS PRIMER_CODIGO_GENERACION,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK LAST ORDER BY HORA_TRANSACCION) AS ULTIMO_CODIGO_GENERACION,
-    NULL MAQUINA,
-    SUM(t.TOTAL_EXENTO-t.DESCUENTO_EXENTO) EXENTAS,
-    0.00 EXENTAS_NOSUJETAS_INTERNO,
-    0.00 NO_SUJETO ,
-    SUM( CASE WHEN T.TOTAL_GRAVADO > 0 THEN T.TOTAL_TRANSACCION ELSE 0 END) GRAVADAS_LOCALES,
-    0.00 EXPORTACIONES,
-    0.00 EXPORTACIONES_FUERA,
-    0.00 EXPORTACIONES_SERVICIOS,
-    0.00 VENTAS_ZONA,   
-    0.00 VENTA_CUENTA_TERCERO,
-    SUM(T.TOTAL_TRANSACCION-T.TOTAL_NOSUJETO) TOTAL_VENTAS,
-    2 AS ANEXO
-FROM
-    CNRPOS_TRANSACCION t
-LEFT JOIN CNRPOS_CLIENTE c ON
-    t.ID_CLIENTE = c.ID_CLIENTE
-WHERE
-   T.STATUS IN (2,6) 
-    AND t.TIPO_DTE IN ('01')
-	AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD')  
-AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')
-GROUP BY
-    TO_CHAR(T.FECHA_TRANSACCION, 'DD/MM/YYYY'),
-    4,
-    T.TIPO_DTE,
-    'N/A',
-    'N/A',
-    'N/A',
-    'N/A',
-    NULL,
-    2
-ORDER BY
-    FECHA]]>
+		<![CDATA[
+        SELECT
+            DATE_FORMAT(t.fecha_transaccion, '%d/%m/%Y') AS FECHA,
+            4 AS CLASE_DOCUMENTO,
+            t.tipo_dte AS TIPO_DOCUMENTO,
+            'N/A' AS NUMERO_RESOLUCION,
+            'N/A' AS SERIE_DOCUMENTO,
+            'N/A' AS NUMERO_INTERNO_DEL,
+            'N/A' AS NUMERO_INTERNO_AL,
+            MIN(codigo_generacion) AS PRIMER_CODIGO_GENERACION,
+            MAX(codigo_generacion) AS ULTIMO_CODIGO_GENERACION,
+            NULL AS MAQUINA,
+            SUM(t.total_exento - t.descuento_exento) AS EXENTAS,
+            0.00 AS EXENTAS_NOSUJETAS_INTERNO,
+            0.00 AS NO_SUJETO,
+            SUM(CASE WHEN t.total_gravado > 0 THEN t.total_transaccion ELSE 0 END) AS GRAVADAS_LOCALES,
+            0.00 AS EXPORTACIONES,
+            0.00 AS EXPORTACIONES_FUERA,
+            0.00 AS EXPORTACIONES_SERVICIOS,
+            0.00 AS VENTAS_ZONA,
+            0.00 AS VENTA_CUENTA_TERCERO,
+            SUM(t.total_transaccion - t.total_nosujeto) AS TOTAL_VENTAS,
+            2 AS ANEXO
+        FROM
+            cnrpos_transaccion t
+        LEFT JOIN cnrpos_cliente c ON t.id_cliente = c.id_cliente
+        WHERE
+            t.status IN (2,6)
+            AND t.tipo_dte IN ('01')
+            AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+            AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+        GROUP BY
+            DATE_FORMAT(t.fecha_transaccion, '%d/%m/%Y'),
+            4,
+            t.tipo_dte,
+            'N/A',
+            'N/A',
+            'N/A',
+            'N/A',
+            NULL,
+            2
+        ORDER BY FECHA
+        ]]>
 	</queryString>
 	<field name="FECHA" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="FECHA"/>

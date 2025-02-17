@@ -7,48 +7,34 @@
 	<parameter name="FECHA_DESDE" class="java.lang.String"/>
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<queryString>
-		<![CDATA[SELECT T.CODIGO_GENERACION, 
-T.NUMERO_DTE, 
-DT.SELLO_RECIBIDO_MH,
-C.NOMBRE_CLIENTE, 
-NVL(C.NIT_CUSTOMER, C.NUMERO_DOCUMENTO) NUM_DOCUMENTO,
-I.DESCRIPCION, 
-T.TOTAL_GRAVADO, 
-T.TOTAL_TRANSACCION, 
-T.RENTA_RETENIDO, 
-CR.ID_TRANSACCION,
-(SELECT CODIGO_GENERACION FROM CNRPOS_TRANSACCION WHERE ID_TRANSACCION = CR.ID_TRANSACCION) CRE_RELACIONADO
-FROM CNRPOS_TRANSACCION T
-INNER JOIN CNRPOS_ITEM I ON T.ID_TRANSACCION = I.ID_TRANSACCION
-LEFT JOIN CNRPOS_CUERPO_DOC_CR CR ON T.CODIGO_GENERACION = CR.NUM_DOCUMENTO
-INNER JOIN CNRPOS_CLIENTE C ON T.ID_CLIENTE = C.ID_CLIENTE
-	LEFT JOIN (
-	SELECT
-		d.ID_TRANSACCION,
-		d.FECHA_EMISION,
-		d.SELLO_RECIBIDO_MH,
-		d.CODIGO_GENERACION,
-		d.DTE_JSON,
-		d.FECHA_ANULADO
-	FROM
-		CNRPOS_DTE_TRANSACCION D
-	INNER JOIN (
-		SELECT
-			ID_TRANSACCION,
-			MAX(ID_DTE_TRANSACCION) AS ULT_ID_DTE_TRANSACCION
-		FROM
-			CNRPOS_DTE_TRANSACCION
-		GROUP BY
-			ID_TRANSACCION
-    ) MAX_T ON
-		d.ID_TRANSACCION = MAX_T.ID_TRANSACCION
-		AND d.ID_DTE_TRANSACCION = MAX_T.ULT_ID_DTE_TRANSACCION
-) DT ON
-	T.ID_TRANSACCION = DT.ID_TRANSACCION
-WHERE T.TIPO_DTE = '14'
-AND T.STATUS IN (2,6)
-	AND T.FECHA_TRANSACCION BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD') 
-AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')]]>
+		<![CDATA[SELECT t.codigo_generacion AS CODIGO_GENERACION,
+                        t.numero_dte AS NUMERO_DTE,
+                        dt.sello_recibido_mh AS SELLO_RECIBIDO_MH,
+                        c.nombre_cliente AS NOMBRE_CLIENTE,
+                        COALESCE(c.nit_customer, c.numero_documento) AS NUM_DOCUMENTO,
+                        i.descripcion AS DESCRIPCION,
+                        t.total_gravado AS TOTAL_GRAVADO,
+                        t.total_transaccion AS TOTAL_TRANSACCION,
+                        t.renta_retenido AS RENTA_RETENIDO,
+                        cr.id_transaccion AS ID_TRANSACCION,
+                        (SELECT codigo_generacion FROM cnrpos_transaccion WHERE id_transaccion = cr.id_transaccion) AS CRE_RELACIONADO
+                FROM cnrpos_transaccion t
+                INNER JOIN cnrpos_item i ON t.id_transaccion = i.id_transaccion
+                LEFT JOIN cnrpos_cuerpo_doc_cr cr ON t.codigo_generacion = cr.num_documento
+                INNER JOIN cnrpos_cliente c ON t.id_cliente = c.id_cliente
+                LEFT JOIN (
+                    SELECT d.id_transaccion, d.fecha_emision, d.sello_recibido_mh, d.codigo_generacion, d.dte_json, d.fecha_anulado
+                    FROM cnrpos_dte_transaccion d
+                    INNER JOIN (
+                        SELECT id_transaccion, MAX(id_dte_transaccion) AS ult_id_dte_transaccion
+                        FROM cnrpos_dte_transaccion
+                        GROUP BY id_transaccion
+                    ) max_t ON d.id_transaccion = max_t.id_transaccion AND d.id_dte_transaccion = max_t.ult_id_dte_transaccion
+                ) dt ON t.id_transaccion = dt.id_transaccion
+                WHERE t.tipo_dte = '14'
+                AND t.status IN (2,6)
+                AND t.fecha_transaccion BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+                AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')]]>
 	</queryString>
 	<field name="CODIGO_GENERACION" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="CODIGO_GENERACION"/>

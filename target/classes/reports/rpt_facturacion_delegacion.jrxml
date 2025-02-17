@@ -17,33 +17,28 @@
 	<parameter name="LOGO" class="java.io.InputStream"/>
 	<parameter name="ID_SUCURSAL" class="java.lang.String"/>
 	<queryString>
-		<![CDATA[SELECT
-    TO_CHAR(FECHA_TRANSACCION, 'DD/MM/YYYY') AS FECHA,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK FIRST ORDER BY HORA_TRANSACCION) AS PRIMER_CODIGO_GENERACION,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK LAST ORDER BY HORA_TRANSACCION) AS ULTIMO_CODIGO_GENERACION,
-    NVL(CASE WHEN TIPO_DTE = '01' THEN  SUM(TOTAL_EXENTO-DESCUENTO_EXENTO)  END ,0.00) FAC_EXENTAS,
-    NVL(CASE WHEN TIPO_DTE = '01' THEN  SUM((CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END)) END ,0.00) FAC_GRAVADO,
-    NVL(CASE WHEN TIPO_DTE = '01' THEN  SUM(TOTAL_EXENTO-DESCUENTO_EXENTO) + SUM((CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END))
-    END,0.00) FAC_TOTAL,
-    NVL(CASE WHEN TIPO_DTE = '03' THEN  SUM(TOTAL_EXENTO-DESCUENTO_EXENTO)  END ,0.00) CF_EXENTAS,
-    NVL(CASE WHEN TIPO_DTE = '03' THEN  SUM((TOTAL_GRAVADO+T.TOTAL_IVA)-DESCUENTO_GRAVADO)  END,0.00) CF_GRAVADO,
-    NVL(CASE WHEN TIPO_DTE = '03' THEN  SUM(TOTAL_EXENTO-DESCUENTO_EXENTO) + SUM(( TOTAL_GRAVADO +T.TOTAL_IVA)-DESCUENTO_GRAVADO)  END ,0.00) CF_TOTAL,
-    NVL(SUM(TOTAL_EXENTO-DESCUENTO_EXENTO) + SUM(CASE WHEN TIPO_DTE = '01' THEN  (TOTAL_GRAVADO-DESCUENTO_GRAVADO)
-                                             ELSE (TOTAL_GRAVADO+T.TOTAL_IVA)-DESCUENTO_GRAVADO END),0.00)  TOTAL,
-    S.NOMBRE_SUCURSAL
-FROM
-    CNRPOS_TRANSACCION T
-INNER JOIN CNRPOS_SUCURSAL S ON T.ID_SUCURSAL = S.ID_SUCURSAL
-WHERE T.STATUS IN (2,6) AND TIPO_DTE IN ('01', '03') 
-AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD') 
-AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')
- AND SUBSTR(s.CODIGO_SUCURSAL, 1, 4) = SUBSTR($P{ID_SUCURSAL},1,4) 
-GROUP BY
-    TO_CHAR(FECHA_TRANSACCION, 'DD/MM/YYYY'),
-    TIPO_DTE,
-     S.NOMBRE_SUCURSAL
-ORDER BY
-    FECHA]]>
+		<![CDATA[
+        SELECT
+            DATE_FORMAT(fecha_transaccion, '%d/%m/%Y') AS fecha,
+            MIN(codigo_generacion) AS primer_codigo_generacion,
+            MAX(codigo_generacion) AS ultimo_codigo_generacion,
+            IFNULL(SUM(CASE WHEN tipo_dte = '01' THEN total_exento - descuento_exento ELSE 0 END), 0.00) AS fac_exentas,
+            IFNULL(SUM(CASE WHEN tipo_dte = '01' AND total_gravado > 0 THEN total_transaccion ELSE 0 END), 0.00) AS fac_gravado,
+            IFNULL(SUM(CASE WHEN tipo_dte = '01' THEN (total_exento - descuento_exento) + (CASE WHEN total_gravado > 0 THEN total_transaccion ELSE 0 END) ELSE 0 END), 0.00) AS fac_total,
+            IFNULL(SUM(CASE WHEN tipo_dte = '03' THEN total_exento - descuento_exento ELSE 0 END), 0.00) AS cf_exentas,
+            IFNULL(SUM(CASE WHEN tipo_dte = '03' THEN (total_gravado + t.total_iva) - descuento_gravado ELSE 0 END), 0.00) AS cf_gravado,
+            IFNULL(SUM(CASE WHEN tipo_dte = '03' THEN (total_exento - descuento_exento) + ((total_gravado + t.total_iva) - descuento_gravado) ELSE 0 END), 0.00) AS cf_total,
+            IFNULL(SUM((total_exento - descuento_exento) + CASE WHEN tipo_dte = '01' THEN (total_gravado - descuento_gravado) ELSE (total_gravado + t.total_iva) - descuento_gravado END), 0.00) AS total,
+            s.nombre_sucursal
+        FROM
+            cnrpos_transaccion t
+        INNER JOIN cnrpos_sucursal s ON t.id_sucursal = s.id_sucursal
+        WHERE t.status IN (2,6) AND tipo_dte IN ('01', '03')
+        AND DATE(fecha_transaccion) BETWEEN STR_TO_DATE($P{fecha_desde}, '%Y-%m-%d') AND STR_TO_DATE($P{fecha_hasta}, '%Y-%m-%d')
+        AND LEFT(s.codigo_sucursal, 4) = LEFT($P{id_sucursal}, 4)
+        GROUP BY DATE_FORMAT(fecha_transaccion, '%d/%m/%Y'), tipo_dte, s.nombre_sucursal
+        ORDER BY fecha;
+        ]]>
 	</queryString>
 	<field name="FECHA" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="FECHA"/>

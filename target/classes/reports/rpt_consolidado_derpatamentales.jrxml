@@ -8,29 +8,31 @@
 	<parameter name="ANIO" class="java.lang.String"/>
 	<queryString language="SQL">
 		<![CDATA[SELECT
-     TRIM(S.NOMBRE_SUCURSAL) NOMBRE_SUCURSAL,
-    NVL(SUM(CASE
-        WHEN T.TIPO_DTE = '05' THEN - T.TOTAL_EXENTO - T.DESCUENTO_EXENTO
-        WHEN T.TIPO_DTE IN ('01','03','06') THEN T.TOTAL_EXENTO - T.DESCUENTO_EXENTO
-        ELSE 0 END), 0.00) EXENTO,
-    NVL(SUM(CASE WHEN T.TIPO_DTE = '05' THEN -(T.TOTAL_GRAVADO - T.DESCUENTO_GRAVADO)
-        WHEN T.TIPO_DTE IN ('03','06') THEN (T.TOTAL_GRAVADO + T.TOTAL_IVA) - T.DESCUENTO_GRAVADO
-        WHEN T.TIPO_DTE IN ('01') THEN T.TOTAL_GRAVADO  - T.DESCUENTO_GRAVADO
-        ELSE 0 END), 0.00) GRAVADO,
-        NVL(SUM(CASE WHEN T.TIPO_DTE = '05' THEN - (T.TOTAL_EXENTO - T.DESCUENTO_EXENTO) - (T.TOTAL_GRAVADO - T.DESCUENTO_GRAVADO)
-            WHEN T.TIPO_DTE IN ('03','06') THEN (T.TOTAL_EXENTO - T.DESCUENTO_EXENTO) + ((T.TOTAL_GRAVADO + T.TOTAL_IVA) - T.DESCUENTO_GRAVADO)
-             WHEN T.TIPO_DTE IN ('01') THEN (T.TOTAL_EXENTO - T.DESCUENTO_EXENTO) + (T.TOTAL_GRAVADO  - T.DESCUENTO_GRAVADO)
-            ELSE 0 END), 0.00) TOTAL
-FROM
-    CNRPOS_SUCURSAL S
-    LEFT JOIN CNRPOS_TRANSACCION T ON
-        T.ID_SUCURSAL = S.ID_SUCURSAL
-        AND T.TIPO_DTE IN ('01','03','05','06')
-        AND T.STATUS IN (2)
-        AND EXTRACT(MONTH FROM T.FECHA_TRANSACCION) =  $P{MES} 
-        AND EXTRACT(YEAR FROM T.FECHA_TRANSACCION) =  $P{ANIO} 
-GROUP BY
-    TRIM(S.NOMBRE_SUCURSAL)]]>
+            TRIM(s.nombre_sucursal) AS NOMBRE_SUCURSAL,
+            COALESCE(SUM(CASE
+                WHEN t.tipo_dte = '05' THEN - t.total_exento - t.descuento_exento
+                WHEN t.tipo_dte IN ('01','03','06') THEN t.total_exento - t.descuento_exento
+                ELSE 0 END), 0.00) AS EXENTO,
+            COALESCE(SUM(CASE
+                WHEN t.tipo_dte = '05' THEN -(t.total_gravado - t.descuento_gravado)
+                WHEN t.tipo_dte IN ('03','06') THEN (t.total_gravado + t.total_iva) - t.descuento_gravado
+                WHEN t.tipo_dte IN ('01') THEN t.total_gravado  - t.descuento_gravado
+                ELSE 0 END), 0.00) AS GRAVADO,
+            COALESCE(SUM(CASE
+                WHEN t.tipo_dte = '05' THEN - (t.total_exento - t.descuento_exento) - (t.total_gravado - t.descuento_gravado)
+                WHEN t.tipo_dte IN ('03','06') THEN (t.total_exento - t.descuento_exento) + ((t.total_gravado + t.total_iva) - t.descuento_gravado)
+                WHEN t.tipo_dte IN ('01') THEN (t.total_exento - t.descuento_exento) + (t.total_gravado  - t.descuento_gravado)
+                ELSE 0 END), 0.00) AS TOTAL
+        FROM
+            cnrpos_sucursal s
+            LEFT JOIN cnrpos_transaccion t ON
+                t.id_sucursal = s.id_sucursal
+                AND t.tipo_dte IN ('01','03','05','06')
+                AND t.status IN (2)
+                AND MONTH(t.fecha_transaccion) = $P{MES}
+                AND YEAR(t.fecha_transaccion) = $P{ANIO}
+        GROUP BY
+            TRIM(s.nombre_sucursal)]]>
 	</queryString>
 	<field name="NOMBRE_SUCURSAL" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="NOMBRE_SUCURSAL"/>

@@ -8,53 +8,53 @@
 	<parameter name="CSV" class="java.lang.Boolean"/>
 	<queryString>
 		<![CDATA[SELECT
-	CASE
-		WHEN C.NRC_CUSTOMER IS NULL THEN NIT_CUSTOMER
-		ELSE NRC_CUSTOMER
-	END NIT_NRC,
-	DT.FECHA_EMISION,
-	T.TIPO_DTE,
-	T.NUMERO_DTE RESOLUCION,
-	DT.SELLO_RECIBIDO_MH SERIE_DOCUMENTO,
-	T.CODIGO_GENERACION,
-	T.TOTAL_GRAVADO MONTO_SUJETO,
-	T.RENTA_RETENIDO MONTO_RETENCION,
-	CASE
-		WHEN C.NIT_CUSTOMER IS NOT NULL THEN NULL
-		ELSE C.NUMERO_DOCUMENTO
-	END DUI,
-	10 ANEXO 
-FROM
-	CNRPOS_TRANSACCION t
-LEFT JOIN (
-	SELECT
-		d.ID_TRANSACCION,
-		d.FECHA_EMISION,
-		d.SELLO_RECIBIDO_MH,
-		d.CODIGO_GENERACION
-	FROM
-		CNRPOS_DTE_TRANSACCION d
-	INNER JOIN (
-		SELECT
-			ID_TRANSACCION,
-			MAX(ID_DTE_TRANSACCION) AS ULT_ID_DTE_TRANSACCION
-		FROM
-			CNRPOS_DTE_TRANSACCION
-		GROUP BY
-			ID_TRANSACCION
-    ) MAX_T ON
-		d.ID_TRANSACCION = MAX_T.ID_TRANSACCION
-		AND d.ID_DTE_TRANSACCION = MAX_T.ULT_ID_DTE_TRANSACCION
-) dt ON
-	t.ID_TRANSACCION = dt.ID_TRANSACCION
-LEFT JOIN CNRPOS_CLIENTE c ON
-	t.ID_CLIENTE = c.ID_CLIENTE
-WHERE
-	T.STATUS IN (2,6) 
-	AND t.TIPO_DTE IN ('07')
-	AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD') 
-AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')
-	AND T.IVA_RETENIDO = T.TOTAL_GRAVADO * 0.01]]>
+            CASE
+                WHEN c.nrc_customer IS NULL THEN c.nit_customer
+                ELSE c.nrc_customer
+            END AS nit_nrc,
+            dt.fecha_emision,
+            t.tipo_dte,
+            t.numero_dte AS resolucion,
+            dt.sello_recibido_mh AS serie_documento,
+            t.codigo_generacion,
+            t.total_gravado AS monto_sujeto,
+            t.renta_retenido AS monto_retencion,
+            CASE
+                WHEN c.nit_customer IS NOT NULL THEN NULL
+                ELSE c.numero_documento
+            END AS dui,
+            10 AS anexo
+        FROM
+            cnrpos_transaccion t
+        LEFT JOIN (
+            SELECT
+                d.id_transaccion,
+                d.fecha_emision,
+                d.sello_recibido_mh,
+                d.codigo_generacion
+            FROM
+                cnrpos_dte_transaccion d
+            INNER JOIN (
+                SELECT
+                    id_transaccion,
+                    MAX(id_dte_transaccion) AS ult_id_dte_transaccion
+                FROM
+                    cnrpos_dte_transaccion
+                GROUP BY
+                    id_transaccion
+            ) max_t ON
+                d.id_transaccion = max_t.id_transaccion
+                AND d.id_dte_transaccion = max_t.ult_id_dte_transaccion
+        ) dt ON
+            t.id_transaccion = dt.id_transaccion
+        LEFT JOIN cnrpos_cliente c ON
+            t.id_cliente = c.id_cliente
+        WHERE
+            t.status IN (2,6)
+            AND t.tipo_dte IN ('07')
+            AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+            AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+            AND t.iva_retenido = t.total_gravado * 0.01]]>
 	</queryString>
 	<field name="NIT_NRC" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="NIT_NRC"/>

@@ -8,25 +8,25 @@
 	<parameter name="LOGO" class="java.io.InputStream"/>
 	<queryString>
 		<![CDATA[SELECT
-    S.NOMBRE_SUCURSAL,
-   NVL(SUM(CASE 
-        WHEN T.TIPO_DTE IN ('01', '03') THEN T.TOTAL_TRANSACCION + 
-            CASE WHEN T.TIPO_DTE = '03' THEN T.TOTAL_IVA ELSE 0 END
+    s.nombre_sucursal,
+    IFNULL(SUM(CASE
+        WHEN t.tipo_dte IN ('01', '03') THEN t.total_transaccion +
+            CASE WHEN t.tipo_dte = '03' THEN t.total_iva ELSE 0 END
         ELSE 0 END), 0.00) AS TOTAL_FACTURADO,
-    SUM(CASE WHEN T.STATUS = 2 THEN 1 ELSE 0 END) AS DTE_EMITIDOS,
-    SUM(CASE WHEN T.STATUS = 7 THEN 1 ELSE 0 END) AS DTE_INVALIDADOS,
-    SUM(CASE WHEN T.STATUS = 6 THEN 1 ELSE 0 END) AS DTE_CONTINGENCIA
+    SUM(CASE WHEN t.status = 2 THEN 1 ELSE 0 END) AS DTE_EMITIDOS,
+    SUM(CASE WHEN t.status = 7 THEN 1 ELSE 0 END) AS DTE_INVALIDADOS,
+    SUM(CASE WHEN t.status = 6 THEN 1 ELSE 0 END) AS DTE_CONTINGENCIA
 FROM
-    CNRPOS_SUCURSAL S
-LEFT JOIN CNRPOS_TRANSACCION T ON
-    T.ID_SUCURSAL = S.ID_SUCURSAL
-    AND T.TIPO_DTE IN ('01', '03')
-    AND T.STATUS IN (2, 6, 7)
-    AND TRUNC(T.FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD')
-    AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')
+    cnrpos_sucursal s
+LEFT JOIN cnrpos_transaccion t ON
+    t.id_sucursal = s.id_sucursal
+    AND t.tipo_dte IN ('01', '03')
+    AND t.status IN (2, 6, 7)
+    AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+    AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
 GROUP BY
-    S.NOMBRE_SUCURSAL
-]]>
+    s.nombre_sucursal
+        ]]>
 	</queryString>
 	<field name="NOMBRE_SUCURSAL" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="NOMBRE_SUCURSAL"/>

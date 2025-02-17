@@ -10,63 +10,43 @@
 	<parameter name="ID_SUCURSAL" class="java.lang.String"/>
 	<parameter name="USUARIO" class="java.lang.String"/>
 	<queryString>
-		<![CDATA[SELECT
-	CASE
-		WHEN T.TIPO_DTE = '01' THEN 'FE'
-		WHEN T.TIPO_DTE = '03' THEN 'CCFE'
-	END TIPO_DOCUMENTO,
-	T.CODIGO_GENERACION,
-	C.NOMBRE_CLIENTE,
-	CASE WHEN T.TIPO_DTE = '03' THEN (CASE WHEN T.PORCENTAJE_DESCUENTO < 100 THEN T.TOTAL_TRANSACCION + T.TOTAL_IVA ELSE 0 END)
-	    WHEN T.TIPO_DTE = '01' THEN (CASE WHEN T.PORCENTAJE_DESCUENTO < 100 THEN T.TOTAL_TRANSACCION ELSE 0 END) END TOTAL_TRANSACCION,
-	TO_CHAR(T.FECHA_TRANSACCION,'DD/MM/YYYY') FECHA,
-	CASE
-		WHEN T.STATUS = 2 THEN 'Aprobado'
-		WHEN T.STATUS = 7 THEN 'Anulado'
-		WHEN T.STATUS = 6 THEN 'Aprobado Contingencia'
-		WHEN T.STATUS = 5 THEN 'Marcado Contingencia'
-	END ESTADO,
-	S.NOMBRE_SUCURSAL || '  ' || S.MISIONAL SUCURSAL,
-	LISTAGG(TRIM(CP.NUMERO_COMPROBANTE), ', ') WITHIN GROUP (ORDER BY CP.NUMERO_COMPROBANTE) AS COMPROBANTES_PAGO,
-	RC.VALOR,
-	T.IVA_RETENIDO*-1 RETE_1,
-	UDTE.USUARIO || ' - ' || ' ' || UDTE.FIRSTNAME || ' ' || UDTE.LASTNAME USUARIO_DTE,
-	U.USUARIO ||  ' - ' || ' ' || U.FIRSTNAME || ' ' || U.LASTNAME USUARIO_R
-FROM
-	CNRPOS_TRANSACCION T
-	LEFT JOIN CNRPOS_CLIENTE c ON
-    t.ID_CLIENTE = c.ID_CLIENTE
-    INNER JOIN CNRPOS_SUCURSAL S ON T.ID_SUCURSAL = S.ID_SUCURSAL
-    INNER JOIN CNRPOS_USERS UDTE ON T.ID_USER = UDTE.ID_USER
-    INNER JOIN CNRPOS_USERS U ON  $P{USUARIO}  = U.USUARIO
-    LEFT JOIN CNRPOS_COMPROBANTE_PAGO_TRANSACCION CP ON T.ID_TRANSACCION = CP.ID_TRANSACCION
-    LEFT JOIN CNRPOS_RCATALOGOS RC ON T.FORMA_DE_PAGO = RC.ID_MH AND RC.GRUPO = 'FORMA_DE_PAGO'
-WHERE
-	TIPO_DTE IN ('01', '03') AND T.STATUS IN (2,5,6,7)
-	AND trunc(T.FECHA_TRANSACCION) = TO_DATE( $P{FECHA}  , 'YYYY-MM-DD')
-	 AND s.CODIGO_SUCURSAL = $P{ID_SUCURSAL}
-GROUP BY
-    CASE
-        WHEN T.TIPO_DTE = '01' THEN 'FE'
-        WHEN T.TIPO_DTE = '03' THEN 'CCFE'
-    END,
-    T.CODIGO_GENERACION,
-    C.NOMBRE_CLIENTE,
-    CASE WHEN T.TIPO_DTE = '03' THEN (CASE WHEN T.PORCENTAJE_DESCUENTO < 100 THEN T.TOTAL_TRANSACCION + T.TOTAL_IVA ELSE 0 END)
-	    WHEN T.TIPO_DTE = '01' THEN (CASE WHEN T.PORCENTAJE_DESCUENTO < 100 THEN T.TOTAL_TRANSACCION ELSE 0 END) END ,
-    TO_CHAR(T.FECHA_TRANSACCION,'DD/MM/YYYY'),
-    CASE
-        WHEN T.STATUS = 2 THEN 'Aprobado'
-		WHEN T.STATUS = 7 THEN 'Anulado'
-		WHEN T.STATUS = 6 THEN 'Aprobado Contingencia'
-		WHEN T.STATUS = 5 THEN 'Marcado Contingencia'
-    END,
-    S.NOMBRE_SUCURSAL || '  ' || S.MISIONAL,
-    RC.VALOR,
-    T.IVA_RETENIDO*-1,
-    UDTE.USUARIO || ' - ' || ' ' || UDTE.FIRSTNAME || ' ' || UDTE.LASTNAME,
-	U.USUARIO || ' - ' || ' ' || U.FIRSTNAME || ' ' || U.LASTNAME
-	ORDER BY TIPO_DOCUMENTO desc, FECHA]]>
+		<![CDATA[
+        SELECT
+            IF(T.tipo_dte = '01', 'FE', IF(T.tipo_dte = '03', 'CCFE', '')) AS TIPO_DOCUMENTO,
+            T.codigo_generacion,
+            C.nombre_cliente,
+            IF(T.tipo_dte = '03', IF(T.porcentaje_descuento < 100, T.total_transaccion + T.total_iva, 0),
+               IF(T.tipo_dte = '01', IF(T.porcentaje_descuento < 100, T.total_transaccion, 0), 0)) AS TOTAL_TRANSACCION,
+            DATE_FORMAT(T.fecha_transaccion, '%d/%m/%Y') AS FECHA,
+            IF(T.status = 2, 'Aprobado',
+               IF(T.status = 7, 'Anulado',
+                  IF(T.status = 6, 'Aprobado Contingencia', 'Marcado Contingencia'))) AS ESTADO,
+            CONCAT(S.nombre_sucursal, '  ', S.misional) AS SUCURSAL,
+            GROUP_CONCAT(DISTINCT TRIM(CP.numero_comprobante) ORDER BY CP.numero_comprobante SEPARATOR ', ') AS COMPROBANTES_PAGO,
+            RC.valor,
+            T.iva_retenido * -1 AS RETE_1,
+            CONCAT(UDTE.usuario, ' - ', UDTE.firstname, ' ', UDTE.lastname) AS USUARIO_DTE,
+            CONCAT(U.usuario, ' - ', U.firstname, ' ', U.lastname) AS USUARIO_R
+        FROM
+            cnrpos_transaccion T
+            LEFT JOIN cnrpos_cliente C ON T.id_cliente = C.id_cliente
+            INNER JOIN cnrpos_sucursal S ON T.id_sucursal = S.id_sucursal
+            INNER JOIN cnrpos_users UDTE ON T.id_user = UDTE.id_user
+            INNER JOIN cnrpos_users U ON $P{USUARIO} = U.usuario
+            LEFT JOIN cnrpos_comprobante_pago_transaccion CP ON T.id_transaccion = CP.id_transaccion
+            LEFT JOIN cnrpos_rcatalogos RC ON T.forma_de_pago = RC.id_mh AND RC.grupo = 'FORMA_DE_PAGO'
+        WHERE
+            T.tipo_dte IN ('01', '03') AND T.status IN (2, 5, 6, 7)
+            AND DATE(T.fecha_transaccion) = STR_TO_DATE($P{FECHA}, '%Y-%m-%d')
+            AND S.codigo_sucursal = $P{ID_SUCURSAL}
+        GROUP BY
+            T.tipo_dte, T.codigo_generacion, C.nombre_cliente,
+            T.porcentaje_descuento, T.total_transaccion, T.total_iva,
+            T.fecha_transaccion, T.status, S.nombre_sucursal, S.misional,
+            RC.valor, T.iva_retenido, UDTE.usuario, UDTE.firstname, UDTE.lastname,
+            U.usuario, U.firstname, U.lastname
+        ORDER BY TIPO_DOCUMENTO DESC, FECHA
+        ]]>
 	</queryString>
 	<field name="TIPO_DOCUMENTO" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="TIPO_DOCUMENTO"/>

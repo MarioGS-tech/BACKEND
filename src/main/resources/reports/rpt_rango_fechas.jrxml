@@ -7,49 +7,51 @@
 	<parameter name="FECHA_DESDE" class="java.lang.String"/>
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<queryString>
-		<![CDATA[SELECT
-    TO_CHAR(T.FECHA_TRANSACCION, 'DD/MM/YYYY') AS FECHA,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK FIRST ORDER BY HORA_TRANSACCION) AS PRIMER_CODIGO_GENERACION,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK LAST ORDER BY HORA_TRANSACCION) AS ULTIMO_CODIGO_GENERACION,
-    NVL(SUM(
-        CASE 
-            WHEN T.TIPO_DTE = '05' THEN -(T.TOTAL_EXENTO - T.DESCUENTO_EXENTO)
-            ELSE T.TOTAL_EXENTO - T.DESCUENTO_EXENTO
-        END
-    ), 0.00) AS EXENTO,
-    NVL(SUM(
-        CASE
-            WHEN T.TIPO_DTE = '01' THEN (CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END)
-            WHEN T.TIPO_DTE = '05' THEN -(T.TOTAL_GRAVADO - T.DESCUENTO_GRAVADO + T.TOTAL_IVA)
-            ELSE (T.TOTAL_GRAVADO + T.TOTAL_IVA) - T.DESCUENTO_GRAVADO
-        END
-    ), 0.00) AS GRAVADO,
-    NVL(
-        SUM(
-            CASE 
-                WHEN T.TIPO_DTE = '05' THEN -(T.TOTAL_EXENTO - T.DESCUENTO_EXENTO)
-                ELSE T.TOTAL_EXENTO - T.DESCUENTO_EXENTO
-            END
-        ) +
-        SUM(
-            CASE
-                WHEN T.TIPO_DTE = '01' THEN (CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END)
-                WHEN T.TIPO_DTE = '05' THEN -(T.TOTAL_GRAVADO - T.DESCUENTO_GRAVADO + T.TOTAL_IVA)
-                ELSE (T.TOTAL_GRAVADO + T.TOTAL_IVA) - T.DESCUENTO_GRAVADO
-            END
-        ),
-    0.00) AS TOTAL
-FROM
-    CNRPOS_TRANSACCION t
-WHERE
-    T.STATUS IN (2,6) 
-    AND t.TIPO_DTE IN ('01','03', '05', '06')
-    AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE($P{FECHA_DESDE}, 'YYYY-MM-DD') 
-    AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')
-GROUP BY
-    TO_CHAR(T.FECHA_TRANSACCION, 'DD/MM/YYYY')
-ORDER BY
-    FECHA]]>
+		<![CDATA[
+        SELECT
+            DATE_FORMAT(t.fecha_transaccion, '%d/%m/%Y') AS FECHA,
+            MIN(codigo_generacion) AS PRIMER_CODIGO_GENERACION,
+            MAX(codigo_generacion) AS ULTIMO_CODIGO_GENERACION,
+            IFNULL(SUM(
+                CASE
+                    WHEN t.tipo_dte = '05' THEN -(t.total_exento - t.descuento_exento)
+                    ELSE t.total_exento - t.descuento_exento
+                END
+            ), 0.00) AS EXENTO,
+            IFNULL(SUM(
+                CASE
+                    WHEN t.tipo_dte = '01' THEN (CASE WHEN total_gravado > 0 THEN total_transaccion ELSE 0 END)
+                    WHEN t.tipo_dte = '05' THEN -(t.total_gravado - t.descuento_gravado + t.total_iva)
+                    ELSE (t.total_gravado + t.total_iva) - t.descuento_gravado
+                END
+            ), 0.00) AS GRAVADO,
+            IFNULL(
+                SUM(
+                    CASE
+                        WHEN t.tipo_dte = '05' THEN -(t.total_exento - t.descuento_exento)
+                        ELSE t.total_exento - t.descuento_exento
+                    END
+                ) +
+                SUM(
+                    CASE
+                        WHEN t.tipo_dte = '01' THEN (CASE WHEN total_gravado > 0 THEN total_transaccion ELSE 0 END)
+                        WHEN t.tipo_dte = '05' THEN -(t.total_gravado - t.descuento_gravado + t.total_iva)
+                        ELSE (t.total_gravado + t.total_iva) - t.descuento_gravado
+                    END
+                ),
+            0.00) AS TOTAL
+        FROM
+            cnrpos_transaccion t
+        WHERE
+            t.status IN (2,6)
+            AND t.tipo_dte IN ('01','03', '05', '06')
+            AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+            AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+        GROUP BY
+            DATE_FORMAT(t.fecha_transaccion, '%d/%m/%Y')
+        ORDER BY
+            FECHA
+        ]]>
 	</queryString>
 	<field name="FECHA" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="FECHA"/>

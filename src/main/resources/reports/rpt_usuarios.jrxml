@@ -24,17 +24,15 @@
 	<parameter name="ESTADO" class="java.lang.String"/>
 	<parameter name="LOGO" class="java.io.InputStream"/>
 	<queryString language="SQL">
-		<![CDATA[SELECT U.USUARIO,
-	U.FIRSTNAME || ' ' || U.LASTNAME NOMBRE,
-	U.EMAIL,
-	U.CARNET,
-	S.NOMBRE_SUCURSAL,
-	S.MISIONAL
-FROM CNRPOS_USERS U
-	INNER JOIN CNRPOS_SUCURSAL S ON 
-	 U.ID_BRANCH = S.ID_SUCURSAL 
-WHERE 
-	 U.IS_ACTIVE =  $P{ESTADO}]]>
+		<![CDATA[SELECT u.usuario AS USUARIO,
+                        CONCAT(u.firstname, ' ', u.lastname) AS NOMBRE,
+                        u.email AS EMAIL,
+                        u.carnet AS CARNET,
+                        s.nombre_sucursal AS NOMBRE_SUCURSAL,
+                        s.misional AS MISIONAL
+                 FROM cnrpos_users u
+                 INNER JOIN cnrpos_sucursal s ON u.id_branch = s.id_sucursal
+                 WHERE u.is_active = $P{ESTADO}]]>
 	</queryString>
 	<field name="USUARIO" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="USUARIO"/>

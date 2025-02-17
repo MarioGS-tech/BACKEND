@@ -9,38 +9,39 @@
 	<parameter name="MODULO" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[SELECT
-    TRUNC(FECHA_TRANSACCION) AS FECHA,
-    SUM(CASE WHEN CODIGO_INGRESO = '14101' THEN DESCUENTO_CALCULADO ELSE 0 END) AS "14101",
-    SUM(CASE WHEN CODIGO_INGRESO = '15799' THEN DESCUENTO_CALCULADO ELSE 0 END) AS "15799",
-    SUM(CASE WHEN CODIGO_INGRESO = '12104' THEN DESCUENTO_CALCULADO ELSE 0 END) AS "12104",
-    SUM(CASE WHEN CODIGO_INGRESO = '14299' THEN DESCUENTO_CALCULADO ELSE 0 END) AS "14299",
-    SUM(DESCUENTO_CALCULADO) AS TOTAL_DIA
+    DATE(fecha_transaccion) AS FECHA,
+    SUM(CASE WHEN codigo_ingreso = '14101' THEN descuento_calculado ELSE 0 END) AS "14101",
+    SUM(CASE WHEN codigo_ingreso = '15799' THEN descuento_calculado ELSE 0 END) AS "15799",
+    SUM(CASE WHEN codigo_ingreso = '12104' THEN descuento_calculado ELSE 0 END) AS "12104",
+    SUM(CASE WHEN codigo_ingreso = '14299' THEN descuento_calculado ELSE 0 END) AS "14299",
+    SUM(descuento_calculado) AS TOTAL_DIA
 FROM (
     SELECT
-        T.ID_TRANSACCION,
-        T.FECHA_TRANSACCION,
-        I.CODIGO_INGRESO,
-        CASE WHEN T.TIPO_DTE = '01' THEN ROUND((I.VTA_GRAVADA + I.VTA_EXENTA) - ((I.VTA_GRAVADA + I.VTA_EXENTA)*T.PORCENTAJE_DESCUENTO/100),2)
-        ELSE (I.VTA_GRAVADA + I.VTA_EXENTA) - ROUND(((I.VTA_GRAVADA + I.VTA_EXENTA)*T.PORCENTAJE_DESCUENTO/100) + (I.IVA_ITEM - (I.IVA_ITEM)*T.PORCENTAJE_DESCUENTO/100),2)
-            END AS DESCUENTO_CALCULADO,
-        S.MODULO,
-        T.STATUS
+        t.id_transaccion,
+        t.fecha_transaccion,
+        i.codigo_ingreso,
+        CASE
+            WHEN t.tipo_dte = '01' THEN ROUND((i.vta_gravada + i.vta_exenta) - ((i.vta_gravada + i.vta_exenta) * t.porcentaje_descuento / 100), 2)
+            ELSE (i.vta_gravada + i.vta_exenta) - ROUND(((i.vta_gravada + i.vta_exenta) * t.porcentaje_descuento / 100) + (i.iva_item - (i.iva_item) * t.porcentaje_descuento / 100), 2)
+        END AS descuento_calculado,
+        s.modulo,
+        t.status
     FROM
-        CNRPOS_TRANSACCION T
-    INNER JOIN CNRPOS_ITEM I ON T.ID_TRANSACCION = I.ID_TRANSACCION
-    INNER JOIN CNRPOS_SUCURSAL S ON T.ID_SUCURSAL = S.ID_SUCURSAL
+        cnrpos_transaccion t
+    INNER JOIN cnrpos_item i ON t.id_transaccion = i.id_transaccion
+    INNER JOIN cnrpos_sucursal s ON t.id_sucursal = s.id_sucursal
     WHERE
-        CODIGO_INGRESO IN ('14101', '15799', '12104', '14299')
-        AND T.TIPO_DTE IN ('01', '03')
-        AND T.STATUS IN (2, 6)
-        AND EXTRACT(MONTH FROM T.FECHA_TRANSACCION) =   $P{MES}
-        AND EXTRACT(YEAR FROM T.FECHA_TRANSACCION) =   $P{ANIO}
-        AND S.MODULO =  $P{MODULO}
-) SUBQUERY
+        codigo_ingreso IN ('14101', '15799', '12104', '14299')
+        AND t.tipo_dte IN ('01', '03')
+        AND t.status IN (2, 6)
+        AND MONTH(t.fecha_transaccion) = $P{MES}
+        AND YEAR(t.fecha_transaccion) = $P{ANIO}
+        AND s.modulo = $P{MODULO}
+) subquery
 GROUP BY
-    TRUNC(FECHA_TRANSACCION)
+    DATE(fecha_transaccion)
 ORDER BY
-    TRUNC(FECHA_TRANSACCION)]]>
+    DATE(fecha_transaccion)]]>
 	</queryString>
 	<field name="FECHA" class="java.sql.Timestamp">
 		<property name="com.jaspersoft.studio.field.name" value="FECHA"/>

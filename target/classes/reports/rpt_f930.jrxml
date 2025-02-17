@@ -17,51 +17,51 @@
 	<parameter name="CSV" class="java.lang.Boolean"/>
 	<queryString>
 		<![CDATA[SELECT
-	NVL(C.NUMERO_DOCUMENTO,C.NIT_CUSTOMER) NUMERO_DOCUMENTO,
-	 SUBSTR(NOMBRE_CLIENTE, 1, 100) AS NOMBRE_CLIENTE,
-	1 CALIDAD,
-	1 MODALIDAD,
-	1 AS TIPO_DOCUMENTO,
-	TO_DATE(DT.FECHA_EMISION, 'YYYY-MM-DD') AS FECHA_DOCUMENTO,
-	DT.SELLO_RECIBIDO_MH SERIE_DOCUMENTO,
-	T.CODIGO_GENERACION NUMERO_DOCUMENTO_EMITITDO,
-	T.IVA_RETENIDO MONTO_RETENCION,
-	T.TOTAL_GRAVADO MONTO_SUJETO,
-	TO_CHAR(T.FECHA_TRANSACCION, 'MMYYYY') ANIO,
-	3 ANEXO
+    IFNULL(c.numero_documento, c.nit_customer) AS NUMERO_DOCUMENTO,
+    SUBSTRING(c.nombre_cliente, 1, 100) AS NOMBRE_CLIENTE,
+    1 AS CALIDAD,
+    1 AS MODALIDAD,
+    1 AS TIPO_DOCUMENTO,
+    STR_TO_DATE(dt.fecha_emision, '%Y-%m-%d') AS FECHA_DOCUMENTO,
+    dt.sello_recibido_mh AS SERIE_DOCUMENTO,
+    t.codigo_generacion AS NUMERO_DOCUMENTO_EMITITDO,
+    t.iva_retenido AS MONTO_RETENCION,
+    t.total_gravado AS MONTO_SUJETO,
+    DATE_FORMAT(t.fecha_transaccion, '%m%Y') AS ANIO,
+    3 AS ANEXO
 FROM
-	CNRPOS_TRANSACCION T
-	LEFT JOIN (
-    SELECT
-        d.ID_TRANSACCION,
-        d.FECHA_EMISION,
-        d.SELLO_RECIBIDO_MH,
-        d.CODIGO_GENERACION
-    FROM
-        CNRPOS_DTE_TRANSACCION d
-    INNER JOIN (
+    cnrpos_transaccion t
+    LEFT JOIN (
         SELECT
-            ID_TRANSACCION,
-            MAX(ID_DTE_TRANSACCION) AS ULT_ID_DTE_TRANSACCION
+            d.id_transaccion,
+            d.fecha_emision,
+            d.sello_recibido_mh,
+            d.codigo_generacion
         FROM
-            CNRPOS_DTE_TRANSACCION
-        GROUP BY
-            ID_TRANSACCION
-    ) MAX_T ON
-        d.ID_TRANSACCION = MAX_T.ID_TRANSACCION
-        AND d.ID_DTE_TRANSACCION = MAX_T.ULT_ID_DTE_TRANSACCION
-) dt ON
-    t.ID_TRANSACCION = dt.ID_TRANSACCION
-LEFT JOIN CNRPOS_CLIENTE c ON
-	t.ID_CLIENTE = c.ID_CLIENTE
+            cnrpos_dte_transaccion d
+        INNER JOIN (
+            SELECT
+                id_transaccion,
+                MAX(id_dte_transaccion) AS ult_id_dte_transaccion
+            FROM
+                cnrpos_dte_transaccion
+            GROUP BY
+                id_transaccion
+        ) max_t ON
+            d.id_transaccion = max_t.id_transaccion
+            AND d.id_dte_transaccion = max_t.ult_id_dte_transaccion
+    ) dt ON
+        t.id_transaccion = dt.id_transaccion
+    LEFT JOIN cnrpos_cliente c ON
+        t.id_cliente = c.id_cliente
 WHERE
-	T.STATUS IN (2,6) 
-	AND T.TIPO_DTE IN ('07')
-	AND T.IVA_RETENIDO > 0
-	AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD') 
-AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')
+    t.status IN (2,6)
+    AND t.tipo_dte IN ('07')
+    AND t.iva_retenido > 0
+    AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+    AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
 ORDER BY
-	T.FECHA_TRANSACCION]]>
+    t.fecha_transaccion]]>
 	</queryString>
 	<field name="NUMERO_DOCUMENTO" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="NUMERO_DOCUMENTO"/>

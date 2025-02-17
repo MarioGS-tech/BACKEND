@@ -9,59 +9,59 @@
 	<parameter name="ID_SUCURSAL" class="java.lang.String"/>
 	<parameter name="USUARIO" class="java.lang.Integer"/>
 	<queryString language="SQL">
-		<![CDATA[SELECT
-	CASE
-		WHEN T.TIPO_DTE = '01' THEN 'FE'
-		WHEN T.TIPO_DTE = '03' THEN 'CCFE'
-	    WHEN T.TIPO_DTE = '05' THEN 'NC'
-	    WHEN T.TIPO_DTE = '06' THEN 'ND'
-	    WHEN T.TIPO_DTE = '07' THEN 'CR'
-	    WHEN T.TIPO_DTE = '14' THEN 'FSE'
-	END TIPO_DOCUMENTO,
-	TO_CHAR(TO_DATE(DT.FECHA_ANULADO,'YYYY/MM/DD') ,'DD/MM/YYYY') FECHA_ANULADO, 
-	T.NUMERO_DTE NUMERO_RESOLUCION,
-	T.CODIGO_GENERACION,
-	DT.SELLO_RECIBIDO_MH,
-	T.TOTAL_TRANSACCION,
-	S.NOMBRE_SUCURSAL SUCURSAL,
-	JSON_VALUE(DT.DTE_JSON, '$.motivo.motivoAnulacion') AS motivoAnulacion,
-	U.USUARIO CREA_DTE,
-	UI.USUARIO INVALIDA_DTE
-FROM
-	CNRPOS_TRANSACCION T
-	LEFT JOIN (
-	SELECT
-		d.ID_TRANSACCION,
-		d.FECHA_EMISION,
-		d.SELLO_RECIBIDO_MH,
-		d.CODIGO_GENERACION,
-		d.DTE_JSON,
-		d.FECHA_ANULADO
-	FROM
-		CNRPOS_DTE_TRANSACCION D
-	INNER JOIN (
-		SELECT
-			ID_TRANSACCION,
-			MAX(ID_DTE_TRANSACCION) AS ULT_ID_DTE_TRANSACCION
-		FROM
-			CNRPOS_DTE_TRANSACCION
-		GROUP BY
-			ID_TRANSACCION
-    ) MAX_T ON
-		d.ID_TRANSACCION = MAX_T.ID_TRANSACCION
-		AND d.ID_DTE_TRANSACCION = MAX_T.ULT_ID_DTE_TRANSACCION
-) dt ON
-	t.ID_TRANSACCION = dt.ID_TRANSACCION
-    INNER JOIN CNRPOS_SUCURSAL S ON T.ID_SUCURSAL = S.ID_SUCURSAL
-    INNER JOIN CNRPOS_USERS U ON T.ID_USER = U.ID_USER 
-    LEFT JOIN CNRPOS_USERS UI ON T.USER_UPDATE = UI.ID_USER 
-WHERE
-   T.STATUS IN (7)
-	AND EXTRACT(MONTH FROM TO_DATE(DT.FECHA_ANULADO, 'YYYY-MM-DD')) = $P{MES} 
-    AND EXTRACT(YEAR FROM TO_DATE(DT.FECHA_ANULADO, 'YYYY-MM-DD')) =  $P{ANIO} 
-    AND (SUBSTR(s.CODIGO_SUCURSAL, 1, 4) = SUBSTR($P{ID_SUCURSAL}, 1, 4) OR $P{ID_SUCURSAL} IS NULL OR $P{ID_SUCURSAL} = '')
-    AND (T.ID_USER = $P{USUARIO} OR $P{USUARIO} IS NULL)
-ORDER BY DT.FECHA_ANULADO]]>
+		<![CDATA[
+        SELECT
+            CASE
+                WHEN t.tipo_dte = '01' THEN 'FE'
+                WHEN t.tipo_dte = '03' THEN 'CCFE'
+                WHEN t.tipo_dte = '05' THEN 'NC'
+                WHEN t.tipo_dte = '06' THEN 'ND'
+                WHEN t.tipo_dte = '07' THEN 'CR'
+                WHEN t.tipo_dte = '14' THEN 'FSE'
+            END AS TIPO_DOCUMENTO,
+            DATE_FORMAT(STR_TO_DATE(dt.fecha_anulado, '%Y/%m/%d'), '%d/%m/%Y') AS FECHA_ANULADO,
+            t.numero_dte AS NUMERO_RESOLUCION,
+            t.codigo_generacion AS CODIGO_GENERACION,
+            dt.sello_recibido_mh AS SELLO_RECIBIDO_MH,
+            t.total_transaccion AS TOTAL_TRANSACCION,
+            s.nombre_sucursal AS SUCURSAL,
+            JSON_UNQUOTE(JSON_EXTRACT(dt.dte_json, '$.motivo.motivoAnulacion')) AS MOTIVOANULACION,
+            u.usuario AS CREA_DTE,
+            ui.usuario AS INVALIDA_DTE
+        FROM
+            cnrpos_transaccion t
+            LEFT JOIN (
+                SELECT
+                    d.id_transaccion,
+                    d.fecha_emision,
+                    d.sello_recibido_mh,
+                    d.codigo_generacion,
+                    d.dte_json,
+                    d.fecha_anulado
+                FROM
+                    cnrpos_dte_transaccion d
+                    INNER JOIN (
+                        SELECT
+                            id_transaccion,
+                            MAX(id_dte_transaccion) AS ult_id_dte_transaccion
+                        FROM
+                            cnrpos_dte_transaccion
+                        GROUP BY
+                            id_transaccion
+                    ) max_t ON d.id_transaccion = max_t.id_transaccion
+                    AND d.id_dte_transaccion = max_t.ult_id_dte_transaccion
+            ) dt ON t.id_transaccion = dt.id_transaccion
+            INNER JOIN cnrpos_sucursal s ON t.id_sucursal = s.id_sucursal
+            INNER JOIN cnrpos_users u ON t.id_user = u.id_user
+            LEFT JOIN cnrpos_users ui ON t.user_update = ui.id_user
+        WHERE
+            t.status IN (7)
+            AND MONTH(STR_TO_DATE(dt.fecha_anulado, '%Y-%m-%d')) = $P{MES}
+            AND YEAR(STR_TO_DATE(dt.fecha_anulado, '%Y-%m-%d')) = $P{ANIO}
+            AND (LEFT(s.codigo_sucursal, 4) = LEFT($P{ID_SUCURSAL}, 4) OR $P{ID_SUCURSAL} IS NULL OR $P{ID_SUCURSAL} = '')
+            AND (t.id_user = $P{USUARIO} OR $P{USUARIO} IS NULL)
+        ORDER BY dt.fecha_anulado
+        ]]>
 	</queryString>
 	<field name="TIPO_DOCUMENTO" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="TIPO_DOCUMENTO"/>

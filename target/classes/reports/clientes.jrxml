@@ -1,48 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.21.2-8434a0bd7c3bbc37cbf916f2968d35e4b165821a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="clientes" pageWidth="1180" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="1140" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="99128ff0-533b-4ae6-8927-2fe80a2c0ac9">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="FACTURAEL_OW"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<parameter name="FECHA_DESDE" class="java.lang.String"/>
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<parameter name="CSV" class="java.lang.Boolean"/>
 	<queryString>
 		<![CDATA[SELECT
-	TO_CHAR(T.FECHA_TRANSACCION, 'MM') MES,
+	MONTH(t.fecha_transaccion) AS MES,
 	CASE
-		WHEN C.TIPO_DOCUMENTO = '36' THEN 1
-		WHEN C.TIPO_DOCUMENTO = '13' THEN 3
-		WHEN C.TIPO_DOCUMENTO = '03' THEN 4
-		WHEN C.TIPO_DOCUMENTO = '02' THEN 5
-		WHEN C.TIPO_DOCUMENTO = '37' THEN 6
+		WHEN c.tipo_documento = '36' THEN 1
+		WHEN c.tipo_documento = '13' THEN 3
+		WHEN c.tipo_documento = '03' THEN 4
+		WHEN c.tipo_documento = '02' THEN 5
+		WHEN c.tipo_documento = '37' THEN 6
 	END AS DOCUMENTO_IDENTIFICACION,
-	NVL(C.NUMERO_DOCUMENTO, C.NIT_CUSTOMER) NUMERO_DOCUMENTO,
-	SUBSTR(C.NOMBRE_CLIENTE, 1, 100) NOMBRE,
-	TO_CHAR(T.FECHA_TRANSACCION, 'DDMMYYYY') FECHA_DOC,
+	COALESCE(c.numero_documento, c.nit_customer) AS NUMERO_DOCUMENTO,
+	SUBSTRING(c.nombre_cliente, 1, 100) AS NOMBRE,
+	DATE_FORMAT(t.fecha_transaccion, '%d%m%Y') AS FECHA_DOC,
 	CASE
-		WHEN T.TIPO_DTE = '01' THEN 1
-		WHEN T.TIPO_DTE = '03' THEN 3
-		WHEN T.TIPO_DTE = '05' THEN 5
-		WHEN T.TIPO_DTE = '06' THEN 6
-		WHEN T.TIPO_DTE = '07' THEN 7
+		WHEN t.tipo_dte = '01' THEN 1
+		WHEN t.tipo_dte = '03' THEN 3
+		WHEN t.tipo_dte = '05' THEN 5
+		WHEN t.tipo_dte = '06' THEN 6
+		WHEN t.tipo_dte = '07' THEN 7
 	END AS TIPO_DOCUMENTO,
-	T.CODIGO_GENERACION,
-	T.TOTAL_TRANSACCION MONTO_OPERACION,
-	T.TOTAL_IVA IVA_OPERACION,
-	TO_CHAR(T.FECHA_TRANSACCION, 'YYYY') ANIO,
-	4 ANEXO
+	t.codigo_generacion,
+	t.total_transaccion AS MONTO_OPERACION,
+	t.total_iva AS IVA_OPERACION,
+	YEAR(t.fecha_transaccion) AS ANIO,
+	4 AS ANEXO
 FROM
-	CNRPOS_TRANSACCION T
-LEFT JOIN CNRPOS_CLIENTE c ON
-	t.ID_CLIENTE = c.ID_CLIENTE
+	cnrpos_transaccion t
+LEFT JOIN cnrpos_cliente c ON t.id_cliente = c.id_cliente
 WHERE
-	T.STATUS IN (2,6) 
-	AND T.TIPO_DTE IN ('03', '05', '06')
-	AND T.PORCENTAJE_DESCUENTO < 100
-	AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD') 
-AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')
-ORDER BY
-	T.FECHA_TRANSACCION]]>
+	t.status IN (2,6)
+	AND t.tipo_dte IN ('03', '05', '06')
+	AND t.porcentaje_descuento < 100
+	AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+	AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+ORDER BY t.fecha_transaccion]]>
 	</queryString>
 	<field name="MES" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="MES"/>

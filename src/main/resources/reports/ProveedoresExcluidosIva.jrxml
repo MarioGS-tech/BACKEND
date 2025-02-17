@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Created with Jaspersoft Studio version 6.20.6.final using JasperReports Library version 6.20.6-5c96b6aa8a39ac1dc6b6bea4b81168e16dd39231  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ProveedoresExcluidosIva" pageWidth="2000" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="1960" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="99128ff0-533b-4ae6-8927-2fe80a2c0ac9">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="oracle"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<property name="com.jaspersoft.studio.unit." value="pixel"/>
 	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
@@ -16,61 +15,62 @@
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<parameter name="CSV" class="java.lang.Boolean"/>
 	<queryString>
-		<![CDATA[SELECT
-	TO_CHAR(TO_DATE(DT.FECHA_EMISION, 'YYYY-MM-DD'), 'MM') AS MES,
-	CASE WHEN LENGTH(C.NUMERO_DOCUMENTO) = 9 THEN 1 ELSE 2 END
-	    DOCUMENTO_IDENTIFICACION,
-	SUBSTR(C.NOMBRE_CLIENTE, 1, 100) NOMBRE,
-	TO_CHAR(TO_DATE(DT.FECHA_EMISION, 'YYYY-MM-DD'), 'DDMMYYYY') AS FECHA_EMISION,
-	4 CLASE_DOCUMENTO,
-	CASE
-		WHEN T.TIPO_DTE = '14' THEN 1
-	END AS TIPO_DOCUMENTO,
-	DT.SELLO_RECIBIDO_MH SERIE,
-	T.NUMERO_DTE NUMERO_CONTROL,
-	0 NUMERO_INTERNO,
-	T.TOTAL_TRANSACCION,
-	T.IVA_RETENIDO,
-	T.TOTAL_IVA,
-	TO_CHAR(T.FECHA_TRANSACCION, 'YYYY') ANIO,
-	c.EMAIL_CUSTOMER CORREO,
-	NVL(C.NIT_CUSTOMER, C.NUMERO_DOCUMENTO) DOCUMENTO_IDENT,
-	C.TELEFONO,
-	(SELECT VALOR FROM CNRPOS_RCATALOGOS WHERE GRUPO = 'DEPARTAMENTOS' AND ID_MH = C.DEPARTAMENTO) DEPARTAMENTO,
-	(SELECT VALOR FROM CNRPOS_RCATALOGOS WHERE GRUPO = 'MUNICIPIOS' AND ID_MH_PADRE = C.DEPARTAMENTO AND ID_MH = C.MUNICIPIO) MUNICIPIO,
-	1 ANEXO
-FROM
-	CNRPOS_TRANSACCION T
-	LEFT JOIN (
-    SELECT
-        d.ID_TRANSACCION,
-        d.FECHA_EMISION,
-        d.SELLO_RECIBIDO_MH,
-        d.CODIGO_GENERACION
-    FROM
-        CNRPOS_DTE_TRANSACCION d
-    INNER JOIN (
+		<![CDATA[
         SELECT
-            ID_TRANSACCION,
-            MAX(ID_DTE_TRANSACCION) AS ULT_ID_DTE_TRANSACCION
+            DATE_FORMAT(STR_TO_DATE(dt.fecha_emision, '%Y-%m-%d'), '%m') AS MES,
+            CASE WHEN LENGTH(c.numero_documento) = 9 THEN 1 ELSE 2 END AS DOCUMENTO_IDENTIFICACION,
+            LEFT(c.nombre_cliente, 100) AS NOMBRE,
+            DATE_FORMAT(STR_TO_DATE(dt.fecha_emision, '%Y-%m-%d'), '%d%m%Y') AS FECHA_EMISION,
+            4 AS CLASE_DOCUMENTO,
+            CASE
+                WHEN t.tipo_dte = '14' THEN 1
+            END AS TIPO_DOCUMENTO,
+            dt.sello_recibido_mh AS SERIE,
+            t.numero_dte AS NUMERO_CONTROL,
+            0 AS NUMERO_INTERNO,
+            t.total_transaccion AS TOTAL_TRANSACCION,
+            t.iva_retenido AS IVA_RETENIDO,
+            t.total_iva AS TOTAL_IVA,
+            YEAR(t.fecha_transaccion) AS ANIO,
+            c.email_customer AS CORREO,
+            IFNULL(c.nit_customer, c.numero_documento) AS DOCUMENTO_IDENT,
+            c.telefono AS TELEFONO,
+            (SELECT valor FROM cnrpos_rcatalogos WHERE grupo = 'departamentos' AND id_mh = c.departamento) AS DEPARTAMENTO,
+            (SELECT valor FROM cnrpos_rcatalogos WHERE grupo = 'municipios' AND id_mh_padre = c.departamento AND id_mh = c.municipio) AS MUNICIPIO,
+            1 AS ANEXO
         FROM
-            CNRPOS_DTE_TRANSACCION
-        GROUP BY
-            ID_TRANSACCION
-    ) MAX_T ON
-        d.ID_TRANSACCION = MAX_T.ID_TRANSACCION
-        AND d.ID_DTE_TRANSACCION = MAX_T.ULT_ID_DTE_TRANSACCION
-) dt ON
-    t.ID_TRANSACCION = dt.ID_TRANSACCION
-LEFT JOIN CNRPOS_CLIENTE c ON
-	t.ID_CLIENTE = c.ID_CLIENTE
-WHERE
-	T.STATUS IN (2,6) 
-	AND T.TIPO_DTE IN ('14')
-	AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD') 
-AND TO_DATE( $P{FECHA_HASTA} , 'YYYY-MM-DD')
-ORDER BY
-	T.FECHA_TRANSACCION]]>
+            cnrpos_transaccion t
+        LEFT JOIN (
+            SELECT
+                d.id_transaccion,
+                d.fecha_emision,
+                d.sello_recibido_mh,
+                d.codigo_generacion
+            FROM
+                cnrpos_dte_transaccion d
+            INNER JOIN (
+                SELECT
+                    id_transaccion,
+                    MAX(id_dte_transaccion) AS ULT_ID_DTE_TRANSACCION
+                FROM
+                    cnrpos_dte_transaccion
+                GROUP BY
+                    id_transaccion
+            ) max_t ON
+                d.id_transaccion = max_t.id_transaccion
+                AND d.id_dte_transaccion = max_t.ULT_ID_DTE_TRANSACCION
+        ) dt ON
+            t.id_transaccion = dt.id_transaccion
+        LEFT JOIN cnrpos_cliente c ON
+            t.id_cliente = c.id_cliente
+        WHERE
+            t.status IN (2,6)
+            AND t.tipo_dte IN ('14')
+            AND DATE(t.fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+            AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+        ORDER BY
+            t.fecha_transaccion
+        ]]>
 	</queryString>
 	<field name="MES" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="MES"/>

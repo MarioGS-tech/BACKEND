@@ -6,30 +6,30 @@
 	<parameter name="FECHA_DESDE" class="java.lang.String"/>
 	<parameter name="FECHA_HASTA" class="java.lang.String"/>
 	<queryString>
-		<![CDATA[SELECT
-    TO_CHAR(FECHA_TRANSACCION, 'YYYY-MM-DD') AS DIA,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK FIRST ORDER BY HORA_TRANSACCION) AS PRIMER_CODIGO_GENERACION,
-    MIN(CODIGO_GENERACION) KEEP (DENSE_RANK LAST ORDER BY HORA_TRANSACCION) AS ULTIMO_CODIGO_GENERACION,
-    MIN(NUMERO_DTE) KEEP (DENSE_RANK FIRST ORDER BY HORA_TRANSACCION) AS PRIMER_NUMERO_DTE,
-    MIN(NUMERO_DTE) KEEP (DENSE_RANK LAST ORDER BY HORA_TRANSACCION) AS ULTIMO_NUMERO_DTE,
-    SUM(TOTAL_EXENTO) AS VENTAS_EXENTAS,
-    SUM(TOTAL_NOSUJETO) AS VENTAS_NO_SUJETAS,
-    SUM(TOTAL_GRAVADO) AS LOCALES_GRAVADO,
-    0.00 AS EXPOR_GRAVADO,
-    SUM(TOTAL_TRANSACCION) AS TOTAL_VENTA,
-    0.00 AS RETE_DECLARANTE,
-    0.00 AS TERCERO_EXENTA,
-    0.00 AS TERCERO_NO_SUJETA,
-    0.00 AS TERCERO_GRAVADA
-FROM
-    CNRPOS_TRANSACCION
-WHERE T.STATUS IN (2,6)  AND TIPO_DTE = '01' 
-AND TRUNC(FECHA_TRANSACCION) BETWEEN TO_DATE( $P{FECHA_DESDE} , 'YYYY-MM-DD') 
-AND TO_DATE($P{FECHA_HASTA}, 'YYYY-MM-DD')
-GROUP BY
-    TO_CHAR(FECHA_TRANSACCION, 'YYYY-MM-DD')
-ORDER BY
-    DIA]]>
+		<![CDATA[
+        SELECT
+            DATE_FORMAT(fecha_transaccion, '%Y-%m-%d') AS DIA,
+            MIN(codigo_generacion) AS PRIMER_CODIGO_GENERACION,
+            MAX(codigo_generacion) AS ULTIMO_CODIGO_GENERACION,
+            MIN(numero_dte) AS PRIMER_NUMERO_DTE,
+            MAX(numero_dte) AS ULTIMO_NUMERO_DTE,
+            SUM(total_exento) AS VENTAS_EXENTAS,
+            SUM(total_nosujeto) AS VENTAS_NO_SUJETAS,
+            SUM(total_gravado) AS LOCALES_GRAVADO,
+            0.00 AS EXPOR_GRAVADO,
+            SUM(total_transaccion) AS TOTAL_VENTA,
+            0.00 AS RETE_DECLARANTE,
+            0.00 AS TERCERO_EXENTA,
+            0.00 AS TERCERO_NO_SUJETA,
+            0.00 AS TERCERO_GRAVADA
+        FROM
+            cnrpos_transaccion T
+        WHERE T.status IN (2,6) AND tipo_dte = '01'
+        AND DATE(fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d')
+        AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+        GROUP BY DATE_FORMAT(fecha_transaccion, '%Y-%m-%d')
+        ORDER BY DIA;
+        ]]>
 	</queryString>
 	<field name="DIA" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="DIA"/>

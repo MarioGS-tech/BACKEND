@@ -34,8 +34,8 @@
             cnrpos_transaccion t
         INNER JOIN cnrpos_sucursal s ON t.id_sucursal = s.id_sucursal
         WHERE t.status IN (2,6) AND tipo_dte IN ('01', '03')
-        AND DATE(fecha_transaccion) BETWEEN STR_TO_DATE($P{fecha_desde}, '%Y-%m-%d') AND STR_TO_DATE($P{fecha_hasta}, '%Y-%m-%d')
-        AND LEFT(s.codigo_sucursal, 4) = LEFT($P{id_sucursal}, 4)
+        AND DATE(fecha_transaccion) BETWEEN STR_TO_DATE($P{FECHA_DESDE}, '%Y-%m-%d') AND STR_TO_DATE($P{FECHA_HASTA}, '%Y-%m-%d')
+        AND LEFT(s.codigo_sucursal, 4) = LEFT($P{ID_SUCURSAL}, 4)
         GROUP BY DATE_FORMAT(fecha_transaccion, '%d/%m/%Y'), tipo_dte, s.nombre_sucursal
         ORDER BY fecha;
         ]]>

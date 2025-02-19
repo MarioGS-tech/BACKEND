@@ -21,7 +21,7 @@
             DATE(T.FECHA_TRANSACCION) AS FECHA_TRANSACCION,
             COUNT(T.ID_TRANSACCION) AS CANTIDAD_VENTAS,
             SUM(((CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END) + TOTAL_EXENTO) - TOTAL_IVA) AS MONTO_OPERACION,
-            SUM(((CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_TRANSACCION ELSE 0 END)) - TOTAL_IVA) * 0.13 AS IVA_OPERACION,
+            SUM(CASE WHEN TOTAL_GRAVADO > 0 THEN TOTAL_GRAVADO ELSE 0 END) * 0.13 AS IVA_OPERACION,
             5 AS ANEXO
         FROM
             cnrpos_transaccion T
@@ -70,7 +70,7 @@
 		<variableExpression><![CDATA[$F{MONTO_OPERACION}]]></variableExpression>
 	</variable>
 	<variable name="TOTAL_IVA" class="java.math.BigDecimal" calculation="Sum">
-		<variableExpression><![CDATA[$F{IVA_OPERACION}]]></variableExpression>
+		<variableExpression><![CDATA[$F{IVA_OPERACION} == null ? java.math.BigDecimal.ZERO : $F{IVA_OPERACION}]]></variableExpression>
 	</variable>
 	<background>
 		<band splitType="Stretch"/>
@@ -444,7 +444,7 @@
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font fontName="SansSerif" size="10" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{IVA_OPERACION}]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$V{TOTAL_IVA}]]></textFieldExpression>
 			</textField>
 		</band>
 	</summary>
